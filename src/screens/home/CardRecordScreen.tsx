@@ -1,16 +1,26 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {HomeStackParamList} from '../../navigation/types';
+import {useWallet} from '../../hooks/useWallet';
+import {getOperationRecords, type OperationRecord} from '../../db/recordDao';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CardRecord'>;
 
 export default function CardRecordScreen({navigation}: Props) {
   const {t} = useTranslation();
+  const {currentWallet} = useWallet();
+  const [records, setRecords] = useState<OperationRecord[]>([]);
 
-  // TODO: load records from database
-  const records: Array<{id: string; type: string; detail: string; date: string}> = [];
+  useEffect(() => {
+    if (!currentWallet) return;
+    try {
+      setRecords(getOperationRecords(currentWallet.id));
+    } catch {
+      setRecords([]);
+    }
+  }, [currentWallet]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -27,14 +37,16 @@ export default function CardRecordScreen({navigation}: Props) {
         renderItem={({item}) => (
           <View style={styles.recordItem}>
             <Text style={styles.recordType}>{item.type}</Text>
-            <Text style={styles.recordDetail}>{item.detail}</Text>
-            <Text style={styles.recordDate}>{item.date}</Text>
+            <Text style={styles.recordDetail}>{item.detail ?? '-'}</Text>
+            <Text style={styles.recordDate}>
+              {new Date(item.createdAt).toLocaleString()}
+            </Text>
           </View>
         )}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>暫無紀錄</Text>
+            <Text style={styles.emptyText}>{t('home.noCredentials')}</Text>
           </View>
         }
       />

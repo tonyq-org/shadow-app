@@ -4,9 +4,11 @@ export interface Wallet {
   id: string;
   name: string;
   pinHash: string;
+  pinSalt: string;
   didDocument: string | null;
   publicKeyJwk: string | null;
   autoLogoutMinutes: number;
+  biometricEnabled: boolean;
   createdAt: number;
 }
 

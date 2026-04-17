@@ -33,7 +33,8 @@
     "enterPinCode": "請輸入 PIN 碼",
     "useBiometric": "使用生物辨識登入",
     "loginFailed": "登入失敗",
-    "wrongPinCode": "PIN 碼錯誤"
+    "wrongPinCode": "PIN 碼錯誤",
+    "verifyingPin": "加密驗算中..."
   },
   "home": {
     "title": "我的憑證",

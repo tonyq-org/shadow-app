@@ -27,11 +27,10 @@ export type CredentialStackParamList = {
 };
 
 export type PresentationStackParamList = {
+  PresentationHome: undefined;
   VPAuthorization: {qrData: string};
-  AuthorizedCardList: {requestId: string};
   ChangeCard: {requestId: string; currentCardId: string};
   VPResult: {success: boolean; message?: string};
-  VP05QRCode: {data: string};
 };
 
 export type SettingsStackParamList = {

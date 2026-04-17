@@ -44,8 +44,8 @@ export function useWallet() {
   );
 
   const createNewWallet = useCallback(
-    async (name: string, pinHash: string): Promise<Wallet> => {
-      const wallet = walletDao.createWallet(name, pinHash);
+    async (name: string, pinHash: string, pinSalt: string): Promise<Wallet> => {
+      const wallet = walletDao.createWallet(name, pinHash, pinSalt);
 
       const keyTag = `wallet_${wallet.id}`;
       const jwkString = await KeyManager.generateP256Key(keyTag);

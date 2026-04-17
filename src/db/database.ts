@@ -1,145 +1,132 @@
-type Row = Record<string, unknown>;
-
-interface Table {
-  columns: string[];
-  rows: Row[];
-}
-
-const tables: Record<string, Table> = {};
+import {open, type DB} from '@op-engineering/op-sqlite';
+import * as Keychain from 'react-native-keychain';
+import {randomBytes, bytesToHex} from '@noble/hashes/utils.js';
 
 export interface Database {
-  execute(sql: string, params?: unknown[]): {rows: Row[]};
+  execute(sql: string, params?: unknown[]): {rows: Record<string, unknown>[]};
   executeBatch(commands: Array<{sql: string; params?: unknown[]}>): void;
 }
 
-const inMemoryDb: Database = {
-  execute(sql: string, params?: unknown[]): {rows: Row[]} {
-    const trimmed = sql.trim().toUpperCase();
+const KEYCHAIN_SERVICE = 'shadow-wallet-db-key';
+const DB_NAME = 'shadow_wallet.db';
 
-    if (trimmed.startsWith('CREATE TABLE')) {
-      const match = sql.match(/CREATE TABLE IF NOT EXISTS (\w+)/i);
-      if (match && !tables[match[1]]) {
-        tables[match[1]] = {columns: [], rows: []};
+let rawDb: DB | null = null;
+
+async function getOrCreateDbKey(): Promise<string> {
+  const existing = await Keychain.getGenericPassword({service: KEYCHAIN_SERVICE});
+  if (existing && existing.password) {
+    return existing.password;
+  }
+  const key = bytesToHex(randomBytes(32));
+  await Keychain.setGenericPassword('db', key, {
+    service: KEYCHAIN_SERVICE,
+    accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
+  return key;
+}
+
+function wrapDb(raw: DB): Database {
+  return {
+    execute(sql: string, params?: unknown[]) {
+      const result = raw.executeSync(sql, params as any[]);
+      return {rows: result.rows as Record<string, unknown>[]};
+    },
+    executeBatch(commands) {
+      for (const cmd of commands) {
+        raw.executeSync(cmd.sql, cmd.params as any[]);
       }
-      return {rows: []};
-    }
-
-    if (trimmed.startsWith('INSERT')) {
-      const match = sql.match(/INSERT INTO (\w+)\s*\(([^)]+)\)/i);
-      if (match) {
-        const tableName = match[1];
-        const columns = match[2].split(',').map(c => c.trim());
-        const table = tables[tableName];
-        if (table) {
-          const row: Row = {};
-          columns.forEach((col, i) => {
-            row[col] = params?.[i] ?? null;
-          });
-          table.rows.push(row);
-        }
-      }
-      return {rows: []};
-    }
-
-    if (trimmed.startsWith('SELECT')) {
-      const fromMatch = sql.match(/FROM (\w+)/i);
-      if (!fromMatch) {
-        return {rows: []};
-      }
-      const tableName = fromMatch[1];
-      const table = tables[tableName];
-      if (!table) {
-        return {rows: []};
-      }
-
-      let result = [...table.rows];
-
-      const whereMatch = sql.match(/WHERE (\w+)\s*=\s*\?/i);
-      if (whereMatch && params && params.length > 0) {
-        const col = whereMatch[1];
-        result = result.filter(r => r[col] === params[0]);
-      }
-
-      if (trimmed.includes('ORDER BY') && trimmed.includes('DESC')) {
-        const orderMatch = sql.match(/ORDER BY (\w+)/i);
-        if (orderMatch) {
-          const col = orderMatch[1];
-          result.sort((a, b) => (Number(b[col]) || 0) - (Number(a[col]) || 0));
-        }
-      }
-
-      return {rows: result};
-    }
-
-    if (trimmed.startsWith('UPDATE')) {
-      const match = sql.match(/UPDATE (\w+)\s+SET\s+(.+?)\s+WHERE\s+(\w+)\s*=\s*\?/i);
-      if (match && params) {
-        const tableName = match[1];
-        const setClauses = match[2];
-        const whereCol = match[3];
-        const table = tables[tableName];
-        if (table) {
-          const sets = setClauses.split(',').map(s => s.trim().match(/(\w+)\s*=\s*\?/)?.[1]).filter(Boolean) as string[];
-          const whereVal = params[sets.length];
-          table.rows.forEach(row => {
-            if (row[whereCol] === whereVal) {
-              sets.forEach((col, i) => {
-                row[col] = params[i] ?? null;
-              });
-            }
-          });
-        }
-      }
-      return {rows: []};
-    }
-
-    if (trimmed.startsWith('DELETE')) {
-      const match = sql.match(/DELETE FROM (\w+)\s+WHERE\s+(\w+)\s*=\s*\?/i);
-      if (match && params) {
-        const tableName = match[1];
-        const whereCol = match[2];
-        const table = tables[tableName];
-        if (table) {
-          table.rows = table.rows.filter(r => r[whereCol] !== params[0]);
-        }
-      }
-      return {rows: []};
-    }
-
-    return {rows: []};
-  },
-
-  executeBatch(commands) {
-    for (const cmd of commands) {
-      this.execute(cmd.sql, cmd.params);
-    }
-  },
-};
-
-let db: Database | null = null;
+    },
+  };
+}
 
 export function getDatabase(): Database {
-  if (!db) {
-    db = inMemoryDb;
-    initTables();
+  if (!rawDb) {
+    throw new Error('Database not initialized. Call initDatabase() first.');
   }
-  return db;
+  return wrapDb(rawDb);
 }
 
-export async function initDatabase(_encryptionKey?: string): Promise<void> {
-  db = inMemoryDb;
-  initTables();
+export async function initDatabase(): Promise<void> {
+  if (rawDb) {
+    return;
+  }
+  const key = await getOrCreateDbKey();
+  try {
+    rawDb = open({name: DB_NAME, encryptionKey: key});
+    rawDb.executeSync('SELECT count(*) FROM sqlite_master');
+  } catch {
+    try {
+      rawDb?.close();
+    } catch {}
+    const temp = open({name: DB_NAME});
+    temp.delete();
+    rawDb = open({name: DB_NAME, encryptionKey: key});
+  }
+  initTables(wrapDb(rawDb));
 }
 
-function initTables(): void {
-  const tableNames = ['wallet', 'credential', 'operation_record', 'presentation_record', 'search_record'];
-  for (const name of tableNames) {
-    if (!tables[name]) {
-      tables[name] = {columns: [], rows: []};
-    }
-  }
+function initTables(db: Database): void {
+  db.execute(`
+    CREATE TABLE IF NOT EXISTS wallet (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      pin_hash TEXT NOT NULL,
+      pin_salt TEXT NOT NULL DEFAULT '',
+      did_document TEXT,
+      public_key_jwk TEXT,
+      auto_logout_minutes INTEGER DEFAULT 5,
+      biometric_enabled INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL
+    )
+  `);
+  db.execute(`
+    CREATE TABLE IF NOT EXISTS credential (
+      id TEXT PRIMARY KEY,
+      wallet_id TEXT NOT NULL,
+      raw_jwt TEXT NOT NULL,
+      issuer_did TEXT,
+      issuer_name TEXT,
+      credential_type TEXT,
+      display_name TEXT,
+      display_image TEXT,
+      status INTEGER DEFAULT 0,
+      issued_at INTEGER,
+      expires_at INTEGER,
+      created_at INTEGER NOT NULL
+    )
+  `);
+  db.execute(`
+    CREATE TABLE IF NOT EXISTS operation_record (
+      id TEXT PRIMARY KEY,
+      wallet_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      detail TEXT,
+      created_at INTEGER NOT NULL
+    )
+  `);
+  db.execute(`
+    CREATE TABLE IF NOT EXISTS presentation_record (
+      id TEXT PRIMARY KEY,
+      wallet_id TEXT NOT NULL,
+      verifier_name TEXT,
+      credential_ids TEXT,
+      result INTEGER,
+      created_at INTEGER NOT NULL
+    )
+  `);
+  db.execute(`
+    CREATE TABLE IF NOT EXISTS search_record (
+      id TEXT PRIMARY KEY,
+      wallet_id TEXT NOT NULL,
+      keyword TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    )
+  `);
 }
 
 export async function closeDatabase(): Promise<void> {
-  db = null;
+  if (rawDb) {
+    rawDb.close();
+    rawDb = null;
+  }
 }

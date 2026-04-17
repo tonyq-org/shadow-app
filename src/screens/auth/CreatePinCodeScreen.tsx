@@ -13,6 +13,8 @@ import type {AuthStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
 import {useAuthStore} from '../../store/authStore';
 import PinCodeInput from '../../components/PinCodeInput';
+import LoadingOverlay from '../../components/LoadingOverlay';
+import {generateSalt, hashPinAsync} from '../../utils/pin';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'CreatePinCode'>;
 
@@ -40,9 +42,9 @@ export default function CreatePinCodeScreen({navigation, route}: Props) {
 
       setLoading(true);
       try {
-        // Simple hash for PIN (in production use proper KDF)
-        const pinHash = value; // TODO: use proper hashing
-        const wallet = await createNewWallet(walletName, pinHash);
+        const salt = generateSalt();
+        const pinHash = await hashPinAsync(value, salt);
+        const wallet = await createNewWallet(walletName, pinHash, salt);
         login(wallet.id);
       } catch (error: any) {
         Alert.alert(t('common.error'), error.message);
@@ -71,6 +73,7 @@ export default function CreatePinCodeScreen({navigation, route}: Props) {
           disabled={loading}
         />
       </View>
+      <LoadingOverlay visible={loading} message={t('auth.verifyingPin')} />
     </SafeAreaView>
   );
 }

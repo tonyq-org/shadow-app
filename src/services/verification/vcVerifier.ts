@@ -1,8 +1,23 @@
-import {jwtDecode} from '../crypto/jwt';
+import {jwtDecode, jwtDecodePayload} from '../crypto/jwt';
+import type {JWK} from '../crypto/jwt';
 import type {DIDDocument} from '../protocol/did';
 import {getDIDId} from '../protocol/did';
 import {httpClient} from '../api/http';
+import {verifyJwt} from '../crypto/verifyJwt';
 import {checkRevocationStatus} from './statusList';
+
+function extractIssuerJwkFromDidJwt(didJwt: string): JWK | null {
+  try {
+    const payload = jwtDecodePayload(didJwt) as Record<string, unknown>;
+    const methods = payload.verificationMethod as
+      | Array<{publicKeyJwk?: JWK}>
+      | undefined;
+    const jwk = methods?.[0]?.publicKeyJwk;
+    return jwk ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export interface VerifyResult {
   isValid: boolean;
@@ -20,6 +35,7 @@ export interface Issuer {
   status: number;
   orgName?: string;
   orgType?: number;
+  didJwt?: string;
 }
 
 /**
@@ -51,15 +67,21 @@ export async function verifyVC(
   const now = Math.floor(Date.now() / 1000);
   result.notExpired = !payload.exp || payload.exp > now;
 
-  // Check issuer trust
+  // Check issuer trust + capture issuer JWK for signature verification
   const issuerDid = payload.iss as string;
+  let issuerJwk: JWK | null = null;
   if (issuerDid && frontUrl) {
     try {
       const response = await httpClient.get(`${frontUrl}/api/did/${issuerDid}`);
-      const issuerData = response.data;
+      const body = response.data as Record<string, unknown>;
+      const issuerData = (body?.data ?? body) as Record<string, unknown>;
       result.trust = issuerData?.status === 1;
       result.issuerValid = true;
-      result.trustBadge = issuerData?.orgName;
+      result.trustBadge = issuerData?.orgName as string | undefined;
+      const didJwt = issuerData?.did as string | undefined;
+      if (didJwt) {
+        issuerJwk = extractIssuerJwkFromDidJwt(didJwt);
+      }
     } catch {
       result.trust = false;
     }
@@ -87,9 +109,10 @@ export async function verifyVC(
     result.notRevoked = true;
   }
 
-  // TODO: JWT signature verification using issuer's public key
-  // Requires @noble/curves for ECDSA verification in JS
-  result.signatureValid = true;
+  // Verify JWT signature with issuer's public key (aligned with original verifyJwt)
+  result.signatureValid = issuerJwk
+    ? verifyJwt(vcJwt.split('~')[0], issuerJwk)
+    : false;
 
   result.isValid =
     result.trust &&
@@ -158,7 +181,12 @@ export async function verifyVCOffline(
     result.notRevoked = true;
   }
 
-  result.signatureValid = true;
+  const issuerJwk = issuer?.didJwt
+    ? extractIssuerJwkFromDidJwt(issuer.didJwt)
+    : null;
+  result.signatureValid = issuerJwk
+    ? verifyJwt(vcJwt.split('~')[0], issuerJwk)
+    : false;
 
   result.isValid =
     result.trust &&

@@ -1,16 +1,26 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {SettingsStackParamList} from '../../navigation/types';
+import {useWallet} from '../../hooks/useWallet';
+import {getOperationRecords, type OperationRecord} from '../../db/recordDao';
 
 type Props = NativeStackScreenProps<SettingsStackParamList, 'OperationLog'>;
 
 export default function OperationLogScreen({navigation}: Props) {
   const {t} = useTranslation();
+  const {currentWallet} = useWallet();
+  const [records, setRecords] = useState<OperationRecord[]>([]);
 
-  // TODO: load operation records from database
-  const records: Array<{id: string; type: string; detail: string; date: string}> = [];
+  useEffect(() => {
+    if (!currentWallet) return;
+    try {
+      setRecords(getOperationRecords(currentWallet.id));
+    } catch {
+      setRecords([]);
+    }
+  }, [currentWallet]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -28,14 +38,16 @@ export default function OperationLogScreen({navigation}: Props) {
           <View style={styles.item}>
             <View style={styles.itemHeader}>
               <Text style={styles.itemType}>{item.type}</Text>
-              <Text style={styles.itemDate}>{item.date}</Text>
+              <Text style={styles.itemDate}>
+                {new Date(item.createdAt).toLocaleString()}
+              </Text>
             </View>
-            <Text style={styles.itemDetail}>{item.detail}</Text>
+            <Text style={styles.itemDetail}>{item.detail ?? '-'}</Text>
           </View>
         )}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>暫無操作紀錄</Text>
+          <Text style={styles.emptyText}>{t('home.noCredentials')}</Text>
         }
       />
     </SafeAreaView>

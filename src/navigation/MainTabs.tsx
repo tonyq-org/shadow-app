@@ -17,6 +17,7 @@ import ScanQRScreen from '../screens/credential/ScanQRScreen';
 import SearchCredentialScreen from '../screens/credential/SearchCredentialScreen';
 import AddResultScreen from '../screens/credential/AddResultScreen';
 import ShowCredentialsScreen from '../screens/credential/ShowCredentialsScreen';
+import PresentationHomeScreen from '../screens/presentation/PresentationHomeScreen';
 import VPAuthorizationScreen from '../screens/presentation/VPAuthorizationScreen';
 import ChangeCardScreen from '../screens/presentation/ChangeCardScreen';
 import VPResultScreen from '../screens/presentation/VPResultScreen';
@@ -51,6 +52,7 @@ const PresentationStack = createNativeStackNavigator<PresentationStackParamList>
 function PresentationStackScreen() {
   return (
     <PresentationStack.Navigator screenOptions={{headerShown: false}}>
+      <PresentationStack.Screen name="PresentationHome" component={PresentationHomeScreen} />
       <PresentationStack.Screen name="VPAuthorization" component={VPAuthorizationScreen} />
       <PresentationStack.Screen name="ChangeCard" component={ChangeCardScreen} />
       <PresentationStack.Screen name="VPResult" component={VPResultScreen} />

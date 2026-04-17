@@ -1,3 +1,4 @@
+import {gunzipSync} from 'fflate';
 import {base64urlDecodeBytes} from '../../utils/base64url';
 import {bytesToBits} from '../../utils/encoding';
 import {jwtDecodePayload} from '../crypto/jwt';
@@ -31,10 +32,7 @@ export async function checkRevocationStatus(
 }
 
 function decompressGzip(compressed: Uint8Array): Uint8Array {
-  // In React Native, we'd use a library like pako or react-native-gzip
-  // For now, return as-is and implement with actual gzip library later
-  // TODO: integrate pako or similar for gzip decompression
-  return compressed;
+  return gunzipSync(compressed);
 }
 
 export interface StatusListResult {

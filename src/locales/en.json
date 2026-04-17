@@ -33,7 +33,8 @@
     "enterPinCode": "Enter PIN Code",
     "useBiometric": "Use biometric login",
     "loginFailed": "Login Failed",
-    "wrongPinCode": "Incorrect PIN code"
+    "wrongPinCode": "Incorrect PIN code",
+    "verifyingPin": "Verifying..."
   },
   "home": {
     "title": "My Credentials",

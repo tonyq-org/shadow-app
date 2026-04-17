@@ -5,23 +5,26 @@ import type {Wallet} from '../store/walletStore';
 export function createWallet(
   name: string,
   pinHash: string,
+  pinSalt: string,
 ): Wallet {
   const db = getDatabase();
   const id = uuidv4();
   const now = Date.now();
 
   db.execute(
-    'INSERT INTO wallet (id, name, pin_hash, created_at) VALUES (?, ?, ?, ?)',
-    [id, name, pinHash, now],
+    'INSERT INTO wallet (id, name, pin_hash, pin_salt, created_at) VALUES (?, ?, ?, ?, ?)',
+    [id, name, pinHash, pinSalt, now],
   );
 
   return {
     id,
     name,
     pinHash,
+    pinSalt,
     didDocument: null,
     publicKeyJwk: null,
     autoLogoutMinutes: 5,
+    biometricEnabled: false,
     createdAt: now,
   };
 }
@@ -63,6 +66,14 @@ export function updateAutoLogout(id: string, minutes: number): void {
   ]);
 }
 
+export function updateBiometricEnabled(id: string, enabled: boolean): void {
+  const db = getDatabase();
+  db.execute('UPDATE wallet SET biometric_enabled = ? WHERE id = ?', [
+    enabled ? 1 : 0,
+    id,
+  ]);
+}
+
 export function deleteWallet(id: string): void {
   const db = getDatabase();
   db.execute('DELETE FROM credential WHERE wallet_id = ?', [id]);
@@ -77,9 +88,11 @@ function mapRowToWallet(row: Record<string, unknown>): Wallet {
     id: row.id as string,
     name: row.name as string,
     pinHash: row.pin_hash as string,
+    pinSalt: (row.pin_salt as string) ?? '',
     didDocument: row.did_document as string | null,
     publicKeyJwk: row.public_key_jwk as string | null,
     autoLogoutMinutes: (row.auto_logout_minutes as number) ?? 5,
+    biometricEnabled: (row.biometric_enabled as number) === 1,
     createdAt: row.created_at as number,
   };
 }
