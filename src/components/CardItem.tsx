@@ -1,111 +1,287 @@
-import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import React, {useMemo} from 'react';
+import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import type {Credential} from '../store/walletStore';
 import {CredentialStatus} from '../store/walletStore';
+import {colors, type as fonts} from '../theme/tokens';
+import {
+  CardGradient,
+  Emblem,
+  GuillochePattern,
+  HolographicStripe,
+  MicrotextBorder,
+  type EmblemKey,
+} from './emblems';
+
+type CardTone = 'midnight' | 'graphite' | 'ink';
 
 interface Props {
   credential: Credential;
   onPress?: () => void;
   selected?: boolean;
+  width?: number;
+  tone?: CardTone;
+  emblem?: EmblemKey;
+  holderName?: string;
+  idNumber?: string;
 }
 
-export default function CardItem({credential, onPress, selected}: Props) {
+function inferEmblem(credType: string | null): EmblemKey {
+  if (!credType) return 'id';
+  const lower = credType.toLowerCase();
+  if (lower.includes('diploma') || lower.includes('degree') || lower.includes('edu')) return 'diploma';
+  if (lower.includes('health') || lower.includes('medical')) return 'health';
+  if (lower.includes('driver') || lower.includes('license')) return 'driver';
+  if (lower.includes('member') || lower.includes('library')) return 'membership';
+  return 'id';
+}
+
+function issuerShort(issuerName: string | null, issuerDid: string | null): string {
+  if (issuerName) {
+    return issuerName
+      .toUpperCase()
+      .replace(/[^A-Z0-9\u4E00-\u9FFF]+/g, ' · ')
+      .trim();
+  }
+  if (issuerDid) {
+    const last = issuerDid.split(':').pop() ?? issuerDid;
+    return last.slice(0, 24).toUpperCase();
+  }
+  return 'ISSUER · AUTHORITY';
+}
+
+function formatExpiry(expiresAt: number | null): string {
+  if (!expiresAt) return '— · —';
+  const d = new Date(expiresAt * 1000);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${mm} · ${yyyy}`;
+}
+
+export default function CardItem({
+  credential,
+  onPress,
+  selected,
+  width,
+  tone = 'midnight',
+  emblem,
+  holderName,
+  idNumber,
+}: Props) {
   const {t} = useTranslation();
+  const {width: screenWidth} = useWindowDimensions();
+  const cardWidth = width ?? Math.min(screenWidth - 48, 354);
+  const cardHeight = Math.round(cardWidth * 0.62);
 
-  const statusText = {
-    [CredentialStatus.Unverified]: t('credential.status.unverified'),
-    [CredentialStatus.Verified]: t('credential.status.verified'),
-    [CredentialStatus.Revoked]: t('credential.status.revoked'),
-  }[credential.status];
-
-  const statusColor = {
-    [CredentialStatus.Unverified]: '#F59E0B',
-    [CredentialStatus.Verified]: '#10B981',
-    [CredentialStatus.Revoked]: '#EF4444',
-  }[credential.status];
-
+  const verified = credential.status === CredentialStatus.Verified;
   const isExpired =
-    credential.expiresAt && credential.expiresAt < Date.now() / 1000;
+    credential.expiresAt !== null && credential.expiresAt < Date.now() / 1000;
+
+  const toneColors = colors.cardTone[tone];
+  const emblemKey = emblem ?? inferEmblem(credential.credentialType);
+  const issuerLabel = useMemo(
+    () => issuerShort(credential.issuerName, credential.issuerDid),
+    [credential.issuerName, credential.issuerDid],
+  );
+
+  const displayName =
+    credential.displayName ?? credential.credentialType ?? t('credential.defaultName');
+  const holder = holderName ?? '— · —';
+  const idLabel = idNumber ?? (credential.id.slice(0, 4).toUpperCase() + ' · ' + credential.id.slice(-8).toUpperCase());
+  const validThru = formatExpiry(credential.expiresAt);
+
+  const Container = onPress ? TouchableOpacity : View;
 
   return (
-    <TouchableOpacity
-      style={[styles.card, selected && styles.cardSelected]}
-      onPress={onPress}
-      activeOpacity={0.7}>
-      <View style={styles.header}>
-        <Text style={styles.displayName} numberOfLines={1}>
-          {credential.displayName ?? credential.credentialType ?? t('credential.defaultName')}
-        </Text>
-        <View style={[styles.statusBadge, {backgroundColor: statusColor + '20'}]}>
-          <Text style={[styles.statusText, {color: statusColor}]}>
-            {isExpired ? t('credential.status.expired') : statusText}
-          </Text>
+    <Container
+      style={[
+        styles.wrapper,
+        {width: cardWidth, height: cardHeight},
+        selected && styles.selected,
+      ]}
+      activeOpacity={onPress ? 0.85 : 1}
+      onPress={onPress}>
+      <View style={StyleSheet.absoluteFill}>
+        <CardGradient start={toneColors.start} end={toneColors.end} />
+      </View>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <GuillochePattern color={colors.brand.brass} opacity={0.1} />
+      </View>
+      {verified && (
+        <View style={[styles.holoStripe, {right: 30, width: 12}]} pointerEvents="none">
+          <HolographicStripe />
+        </View>
+      )}
+      <MicrotextBorder width={cardWidth} height={cardHeight} />
+
+      <View style={styles.content} pointerEvents="none">
+        <View style={styles.topRow}>
+          <View style={{flex: 1, paddingRight: 12}}>
+            <Text style={styles.issuerMono} numberOfLines={1}>
+              {issuerLabel}
+            </Text>
+            <Text style={styles.displayName} numberOfLines={2}>
+              {displayName}
+            </Text>
+          </View>
+          <Emblem emblem={emblemKey} size={42} color={colors.brand.brass} />
+        </View>
+
+        <View style={styles.bottomBlock}>
+          <View style={styles.fieldGrid}>
+            <View style={{flex: 1}}>
+              <Text style={styles.fieldLabel}>HOLDER</Text>
+              <Text style={styles.fieldValue} numberOfLines={1}>{holder}</Text>
+            </View>
+            <View style={{flex: 1}}>
+              <Text style={styles.fieldLabel}>VALID · THRU</Text>
+              <Text style={styles.fieldValueMono}>{validThru}</Text>
+            </View>
+          </View>
+
+          <View style={styles.bottomRow}>
+            <Text style={styles.idNumber} numberOfLines={1}>
+              {idLabel}
+            </Text>
+            {verified ? (
+              <View style={styles.verifiedChip}>
+                <View style={styles.verifiedDot} />
+                <Text style={styles.verifiedText}>VERIFIED</Text>
+              </View>
+            ) : isExpired ? (
+              <View style={[styles.verifiedChip, styles.expiredChip]}>
+                <Text style={[styles.verifiedText, {color: colors.status.danger}]}>EXPIRED</Text>
+              </View>
+            ) : credential.status === CredentialStatus.Revoked ? (
+              <View style={[styles.verifiedChip, styles.revokedChip]}>
+                <Text style={[styles.verifiedText, {color: colors.status.danger}]}>REVOKED</Text>
+              </View>
+            ) : (
+              <View style={[styles.verifiedChip, styles.pendingChip]}>
+                <Text style={[styles.verifiedText, {color: colors.text.dim}]}>UNVERIFIED</Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
-
-      {credential.issuerName && (
-        <Text style={styles.issuer}>
-          {t('credential.issuer')}: {credential.issuerName}
-        </Text>
-      )}
-
-      {credential.expiresAt && (
-        <Text style={styles.expiry}>
-          {t('credential.expiresAt')}: {new Date(credential.expiresAt * 1000).toLocaleDateString()}
-        </Text>
-      )}
-    </TouchableOpacity>
+    </Container>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+  wrapper: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: colors.cardTone.midnight.end,
+    marginBottom: 16,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: {width: 0, height: 12},
+    shadowOpacity: 0.55,
+    shadowRadius: 24,
   },
-  cardSelected: {
-    borderColor: '#2563EB',
-    borderWidth: 2,
+  selected: {
+    borderWidth: 1,
+    borderColor: colors.brand.brass,
   },
-  header: {
-    flexDirection: 'row',
+  holoStripe: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+  },
+  content: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingVertical: 20,
+    paddingHorizontal: 22,
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+  },
+  topRow: {flexDirection: 'row', alignItems: 'flex-start'},
+  issuerMono: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    color: colors.brand.brass,
+    opacity: 0.85,
+    marginBottom: 6,
   },
   displayName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    flex: 1,
-    marginRight: 8,
+    fontFamily: fonts.serif,
+    fontSize: 22,
+    letterSpacing: -0.3,
+    lineHeight: 24,
+    color: colors.text.primary,
   },
-  statusBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  bottomBlock: {},
+  fieldGrid: {flexDirection: 'row', gap: 12, marginBottom: 10},
+  fieldLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 8,
+    letterSpacing: 1.5,
+    color: colors.text.primary,
+    opacity: 0.45,
+    marginBottom: 2,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  issuer: {
+  fieldValue: {
+    fontFamily: fonts.sansMedium,
     fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 4,
+    color: colors.text.primary,
   },
-  expiry: {
-    fontSize: 12,
-    color: '#9CA3AF',
+  fieldValueMono: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 13,
+    color: colors.text.primary,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  idNumber: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: colors.text.primary,
+    opacity: 0.7,
+    flex: 1,
+    marginRight: 12,
+  },
+  verifiedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: colors.brand.brass15,
+    borderWidth: 0.5,
+    borderColor: colors.brand.brass66,
+  },
+  expiredChip: {
+    backgroundColor: 'rgba(232,138,138,0.12)',
+    borderColor: 'rgba(232,138,138,0.5)',
+  },
+  revokedChip: {
+    backgroundColor: 'rgba(232,138,138,0.12)',
+    borderColor: 'rgba(232,138,138,0.5)',
+  },
+  pendingChip: {
+    backgroundColor: 'rgba(246,241,227,0.08)',
+    borderColor: 'rgba(246,241,227,0.2)',
+  },
+  verifiedDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.brand.brass,
+  },
+  verifiedText: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 1,
+    color: colors.brand.brass,
   },
 });
