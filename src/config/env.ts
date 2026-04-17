@@ -1,4 +1,15 @@
-import Config from 'react-native-config';
+// Configuration values
+// When react-native-config is properly linked, replace with:
+// import Config from 'react-native-config';
+
+const Config: Record<string, string | undefined> = {};
+
+try {
+  const RNConfig = require('react-native-config');
+  Object.assign(Config, RNConfig.default ?? RNConfig);
+} catch {
+  // react-native-config not linked yet, use defaults
+}
 
 export const env = {
   appName: Config.APP_NAME ?? 'Shadow Wallet',

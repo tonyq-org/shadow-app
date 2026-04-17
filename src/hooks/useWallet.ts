@@ -4,8 +4,9 @@ import {useWalletStore} from '../store/walletStore';
 import type {Wallet} from '../store/walletStore';
 import * as walletDao from '../db/walletDao';
 import * as credentialDao from '../db/credentialDao';
-import {generateKeyPair} from '../services/crypto/native';
+import {KeyManager} from '../native/KeyManager';
 import {generateDIDDocument} from '../services/protocol/did';
+import type {JWK} from '../services/crypto/jwt';
 
 export function useWallet() {
   const currentWalletId = useAuthStore(s => s.currentWalletId);
@@ -18,16 +19,26 @@ export function useWallet() {
   );
 
   const loadWallets = useCallback(() => {
-    const loaded = walletDao.getWallets();
-    setWallets(loaded);
-    return loaded;
+    try {
+      const loaded = walletDao.getWallets();
+      setWallets(loaded);
+      return loaded;
+    } catch {
+      setWallets([]);
+      return [];
+    }
   }, [setWallets]);
 
   const loadCredentials = useCallback(
     (walletId: string) => {
-      const loaded = credentialDao.getCredentialsByWallet(walletId);
-      setCredentials(loaded);
-      return loaded;
+      try {
+        const loaded = credentialDao.getCredentialsByWallet(walletId);
+        setCredentials(loaded);
+        return loaded;
+      } catch {
+        setCredentials([]);
+        return [];
+      }
     },
     [setCredentials],
   );
@@ -36,21 +47,21 @@ export function useWallet() {
     async (name: string, pinHash: string): Promise<Wallet> => {
       const wallet = walletDao.createWallet(name, pinHash);
 
-      // Generate key pair and DID
       const keyTag = `wallet_${wallet.id}`;
-      const jwk = await generateKeyPair(keyTag);
+      const jwkString = await KeyManager.generateP256Key(keyTag);
+      const jwk: JWK = JSON.parse(jwkString);
       const didDocument = generateDIDDocument(jwk);
 
       walletDao.updateWalletDID(
         wallet.id,
         JSON.stringify(didDocument),
-        JSON.stringify(jwk),
+        jwkString,
       );
 
       const updatedWallet: Wallet = {
         ...wallet,
         didDocument: JSON.stringify(didDocument),
-        publicKeyJwk: JSON.stringify(jwk),
+        publicKeyJwk: jwkString,
       };
 
       addWallet(updatedWallet);

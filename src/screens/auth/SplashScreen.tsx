@@ -3,7 +3,6 @@ import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {AuthStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
-import {useAuthStore} from '../../store/authStore';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Splash'>;
 

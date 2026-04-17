@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
   infoLabel: {fontSize: 14, color: '#6B7280'},
-  infoValue: {fontSize: 14, color: '#1F2937', fontWeight: '500', maxWidth: '60%', textAlign: 'right'},
+  infoValue: {fontSize: 14, color: '#1F2937', fontWeight: '500', flex: 1, textAlign: 'right', marginLeft: 16},
   recordButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,

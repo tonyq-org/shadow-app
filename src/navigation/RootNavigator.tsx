@@ -9,22 +9,13 @@ import MainTabs from './MainTabs';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const linking: Parameters<typeof NavigationContainer>[0]['linking'] = {
-  prefixes: [`${env.appScheme}://`, `https://${env.frontendUrl}`],
+const linking = {
+  prefixes: [`${env.appScheme}://`],
   config: {
     screens: {
-      Main: {
+      Auth: {
         screens: {
-          CredentialTab: {
-            screens: {
-              AddCredential: 'credential_offer',
-            },
-          },
-          PresentationTab: {
-            screens: {
-              VPAuthorization: 'authorize',
-            },
-          },
+          Splash: '',
         },
       },
     },
@@ -35,7 +26,7 @@ export default function RootNavigator() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer linking={linking as any}>
       <Stack.Navigator screenOptions={{headerShown: false}}>
         {isAuthenticated ? (
           <Stack.Screen name="Main" component={MainTabs} />
