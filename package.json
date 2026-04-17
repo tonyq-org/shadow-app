@@ -10,7 +10,7 @@
     "adb:install": "cd android && gradlew.bat app:installDebug -PreactNativeDevServerPort=8081",
     "adb:launch": "adb shell am start -n com.shadowwallet/.MainActivity",
     "adb:restart": "adb shell am force-stop com.shadowwallet && adb shell am start -n com.shadowwallet/.MainActivity",
-    "dev": "npm run adb:reverse && npm run start",
+    "dev": "bash dev.sh",
     "deploy": "npm run adb:install && npm run adb:reverse && npm run adb:launch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
