@@ -1,97 +1,105 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Shadow Wallet
 
-# Getting Started
+Open-source digital credential wallet built with React Native + TypeScript.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+Inspired by [TWDIW (Taiwan Digital Wallet)](https://github.com/moda-gov-tw/TWDIW-official-app) from Taiwan's Ministry of Digital Affairs.
 
-## Step 1: Start Metro
+## What is this?
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Shadow Wallet is a cross-platform mobile app for managing W3C Verifiable Credentials. It implements the OpenID4VCI / OpenID4VP protocols, allowing users to receive, store, and present digital credentials with selective disclosure.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+This project rewrites the original TWDIW native apps (Kotlin + Swift + Flutter/Dart) into a single React Native codebase, making it easier to extend and deploy.
 
-```sh
-# Using npm
-npm start
+## Features
 
-# OR using Yarn
-yarn start
+- **OID4VCI** — Receive verifiable credentials from issuers via QR code
+- **OID4VP** — Present credentials to verifiers with selective disclosure (SD-JWT)
+- **DID:key** — Decentralized identifier generation (P-256)
+- **Hardware-backed signing** — Android KeyStore / iOS Secure Enclave (ES256)
+- **Encrypted local storage** — SQLite + SQLCipher
+- **Offline verification** — Verify credentials without network using downloaded trust lists
+- **Biometric auth** — Face ID / Fingerprint login
+- **NFC** — VP transmission via ISO-DEP (planned)
+- **i18n** — Traditional Chinese (zh-TW) + English
+
+## Architecture
+
+```
+src/
+├── navigation/          # React Navigation (AuthStack + 5-tab MainTabs)
+├── screens/             # 17 screens across auth, home, credential, presentation, settings
+├── components/          # Reusable UI (CardItem, PinCodeInput, BottomSheet, etc.)
+├── services/
+│   ├── protocol/        # OID4VCI, OID4VP, SD-JWT, DID — ported from Dart
+│   ├── crypto/          # JWT/JWS + native key management bridge
+│   ├── verification/    # VC verification (online + offline) + status list
+│   └── api/             # HTTP client + trust list integration
+├── store/               # Zustand (auth, wallet, settings)
+├── db/                  # SQLite schema + DAOs (wallet, credential, records)
+├── native/              # Native module interfaces (KeyManager, Biometric, NFC)
+├── hooks/               # useAutoLogout, useDeepLink, useWallet
+└── utils/               # base64url, DER/Raw encoding, multicodec
 ```
 
-## Step 2: Build and run your app
+## Getting Started
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### Prerequisites
 
-### Android
+- Node.js 18+
+- React Native CLI
+- Android Studio (for Android) or Xcode (for iOS)
+
+### Install
 
 ```sh
-# Using npm
+npm install
+```
+
+### Run
+
+```sh
+# Android
 npm run android
 
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# iOS
+cd ios && bundle exec pod install && cd ..
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+### Environment
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+Copy `.env.example` to `.env` and configure:
 
-## Step 3: Modify your app
+```bash
+APP_NAME=Shadow Wallet
+APP_SCHEME=shadowwallet
+FRONTEND_URL=https://example.com
+TRUST_LIST_API_URL=https://example.com/api/trust
+SUPPORT_EMAIL=support@example.com
+```
 
-Now that you have successfully run the app, let's make changes!
+## Roadmap
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+- [x] Project skeleton + navigation
+- [x] OID4VCI / OID4VP protocol implementation
+- [x] SD-JWT selective disclosure
+- [x] DID:key generation
+- [x] VC verification (online + offline)
+- [x] Auth screens (wallet creation, PIN, login)
+- [x] Main app screens (home, credential, presentation, settings)
+- [x] i18n (zh-TW + en)
+- [ ] Native KeyManager module (Android KeyStore + iOS Secure Enclave)
+- [ ] SQLite + SQLCipher integration
+- [ ] QR code scanning (react-native-vision-camera)
+- [ ] Biometric authentication
+- [ ] NFC VP transmission
+- [ ] Trust list API integration
+- [ ] E2E testing
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## Acknowledgements
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+This project is inspired by and references the open-source [TWDIW official app](https://github.com/moda-gov-tw/TWDIW-official-app) released under MIT License by Taiwan's Ministry of Digital Affairs (數位發展部). The protocol implementations (OID4VCI, OID4VP, SD-JWT, DID) are ported from the original Dart/Flutter SDK.
 
-## Congratulations! :tada:
+## License
 
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+[MIT](LICENSE)
