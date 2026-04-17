@@ -19,7 +19,7 @@
     "close": "關閉"
   },
   "auth": {
-    "welcome": "歡迎使用數位憑證皮夾",
+    "welcome": "歡迎使用數位皮夾",
     "welcomeSubtitle": "安全管理您的數位憑證",
     "termsTitle": "服務條款",
     "termsAgree": "我已閱讀並同意服務條款",
@@ -65,6 +65,8 @@
     "verifierRequest": "驗證方請求",
     "selectCredential": "選擇憑證",
     "selectFields": "選擇揭露欄位",
+    "scanToPresent": "掃描驗證方 QR Code 以出示您的憑證",
+    "scanQR": "掃描 QR Code",
     "authorize": "授權",
     "changeCard": "更換憑證",
     "result": {
@@ -77,6 +79,7 @@
     "walletSettings": "皮夾設定",
     "changeWalletName": "變更皮夾名稱",
     "changePinCode": "變更 PIN 碼",
+    "biometricLogin": "生物辨識登入",
     "autoLogout": "自動登出",
     "autoLogoutMinutes": "{{minutes}} 分鐘",
     "faq": "常見問題",

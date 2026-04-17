@@ -19,7 +19,7 @@
     "close": "Close"
   },
   "auth": {
-    "welcome": "Welcome to Digital Credential Wallet",
+    "welcome": "Welcome to Digital Wallet",
     "welcomeSubtitle": "Securely manage your digital credentials",
     "termsTitle": "Terms of Service",
     "termsAgree": "I have read and agree to the Terms of Service",
@@ -65,6 +65,8 @@
     "verifierRequest": "Verifier Request",
     "selectCredential": "Select Credential",
     "selectFields": "Select Disclosed Fields",
+    "scanToPresent": "Scan a verifier's QR code to present your credentials",
+    "scanQR": "Scan QR Code",
     "authorize": "Authorize",
     "changeCard": "Change Credential",
     "result": {
@@ -77,6 +79,7 @@
     "walletSettings": "Wallet Settings",
     "changeWalletName": "Change Wallet Name",
     "changePinCode": "Change PIN Code",
+    "biometricLogin": "Biometric Login",
     "autoLogout": "Auto Logout",
     "autoLogoutMinutes": "{{minutes}} minutes",
     "faq": "FAQ",
