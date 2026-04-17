@@ -48,6 +48,7 @@
     "scanQR": "Scan QR Code",
     "search": "Search Credentials",
     "enterOTP": "Enter verification code",
+    "applying": "Applying for credential...",
     "addSuccess": "Credential added successfully",
     "addFailed": "Failed to add credential",
     "status": {
@@ -57,6 +58,8 @@
       "expired": "Expired"
     },
     "detail": "Credential Details",
+    "defaultName": "Credential",
+    "content": "Credential Content",
     "issuer": "Issuer",
     "issuedAt": "Issued Date",
     "expiresAt": "Expiry Date"
@@ -88,11 +91,24 @@
     "deleteWallet": "Delete Wallet",
     "deleteWalletConfirm": "Are you sure you want to delete this wallet? This action cannot be undone.",
     "operationLog": "Operation Log",
+    "logout": "Logout",
     "version": "Version"
   },
   "scan": {
     "title": "Scan QR Code",
     "hint": "Place QR code inside the frame",
-    "permissionDenied": "Camera permission is required to scan QR codes"
+    "permissionDenied": "Camera permission is required to scan QR codes",
+    "unsupportedQr": "Unrecognized QR code format"
+  },
+  "operations": {
+    "title": "Operation Log",
+    "noRecords": "No records yet",
+    "add": "Add credential",
+    "remove": "Remove credential",
+    "verify": "Verify",
+    "present": "Present",
+    "login": "Login",
+    "changePassword": "Change password",
+    "expired": "Expired"
   }
 }

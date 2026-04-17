@@ -36,7 +36,9 @@ export default function CardRecordScreen({navigation}: Props) {
         keyExtractor={item => item.id}
         renderItem={({item}) => (
           <View style={styles.recordItem}>
-            <Text style={styles.recordType}>{item.type}</Text>
+            <Text style={styles.recordType}>
+              {t(`operations.${item.type}`, {defaultValue: item.type})}
+            </Text>
             <Text style={styles.recordDetail}>{item.detail ?? '-'}</Text>
             <Text style={styles.recordDate}>
               {new Date(item.createdAt).toLocaleString()}
@@ -46,7 +48,7 @@ export default function CardRecordScreen({navigation}: Props) {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>{t('home.noCredentials')}</Text>
+            <Text style={styles.emptyText}>{t('operations.noRecords')}</Text>
           </View>
         }
       />

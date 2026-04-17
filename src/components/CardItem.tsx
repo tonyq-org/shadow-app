@@ -7,9 +7,10 @@ import {CredentialStatus} from '../store/walletStore';
 interface Props {
   credential: Credential;
   onPress?: () => void;
+  selected?: boolean;
 }
 
-export default function CardItem({credential, onPress}: Props) {
+export default function CardItem({credential, onPress, selected}: Props) {
   const {t} = useTranslation();
 
   const statusText = {
@@ -28,10 +29,13 @@ export default function CardItem({credential, onPress}: Props) {
     credential.expiresAt && credential.expiresAt < Date.now() / 1000;
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.card, selected && styles.cardSelected]}
+      onPress={onPress}
+      activeOpacity={0.7}>
       <View style={styles.header}>
         <Text style={styles.displayName} numberOfLines={1}>
-          {credential.displayName ?? credential.credentialType ?? '憑證'}
+          {credential.displayName ?? credential.credentialType ?? t('credential.defaultName')}
         </Text>
         <View style={[styles.statusBadge, {backgroundColor: statusColor + '20'}]}>
           <Text style={[styles.statusText, {color: statusColor}]}>
@@ -68,6 +72,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  cardSelected: {
+    borderColor: '#2563EB',
+    borderWidth: 2,
   },
   header: {
     flexDirection: 'row',

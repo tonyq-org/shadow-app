@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView} from 'react-native';
+import {View, Text, FlatList, StyleSheet, SafeAreaView} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {HomeStackParamList} from '../../navigation/types';
@@ -25,9 +25,7 @@ export default function CardOverviewScreen({navigation}: Props) {
       <View style={styles.header}>
         <Text style={styles.title}>{t('home.title')}</Text>
         {currentWallet && (
-          <TouchableOpacity onPress={() => navigation.navigate('SelectWallet')}>
-            <Text style={styles.walletName}>{currentWallet.name}</Text>
-          </TouchableOpacity>
+          <Text style={styles.walletName}>{currentWallet.name}</Text>
         )}
       </View>
 

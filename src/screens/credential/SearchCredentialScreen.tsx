@@ -69,7 +69,9 @@ export default function SearchCredentialScreen({navigation}: Props) {
             data={results}
             keyExtractor={item => item.did}
             renderItem={({item}) => (
-              <TouchableOpacity style={styles.resultItem}>
+              <TouchableOpacity
+                style={styles.resultItem}
+                onPress={() => navigation.navigate('ScanQR')}>
                 <Text style={styles.resultName}>{item.orgName ?? item.did}</Text>
                 <Text style={styles.resultIssuer}>{item.did}</Text>
               </TouchableOpacity>

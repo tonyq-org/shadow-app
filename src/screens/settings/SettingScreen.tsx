@@ -14,8 +14,6 @@ export default function SettingScreen({navigation}: Props) {
   const menuItems = [
     {label: t('settings.walletSettings'), onPress: () => navigation.navigate('WalletSetting')},
     {label: t('settings.operationLog'), onPress: () => navigation.navigate('OperationLog')},
-    {label: t('settings.faq'), onPress: () => navigation.navigate('FAQ')},
-    {label: t('settings.contact'), onPress: () => navigation.navigate('Contact')},
   ];
 
   return (
@@ -36,7 +34,7 @@ export default function SettingScreen({navigation}: Props) {
         <View style={styles.divider} />
 
         <TouchableOpacity style={styles.menuItem} onPress={logout}>
-          <Text style={[styles.menuText, styles.logoutText]}>登出</Text>
+          <Text style={[styles.menuText, styles.logoutText]}>{t('settings.logout')}</Text>
         </TouchableOpacity>
 
         <Text style={styles.version}>

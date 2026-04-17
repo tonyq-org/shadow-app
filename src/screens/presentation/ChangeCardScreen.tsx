@@ -8,9 +8,10 @@ import CardItem from '../../components/CardItem';
 
 type Props = NativeStackScreenProps<PresentationStackParamList, 'ChangeCard'>;
 
-export default function ChangeCardScreen({navigation}: Props) {
+export default function ChangeCardScreen({navigation, route}: Props) {
   const {t} = useTranslation();
   const {currentCredentials} = useWallet();
+  const {qrData, currentCardId} = route.params;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -27,10 +28,19 @@ export default function ChangeCardScreen({navigation}: Props) {
         renderItem={({item}) => (
           <CardItem
             credential={item}
-            onPress={() => navigation.goBack()}
+            selected={item.id === currentCardId}
+            onPress={() =>
+              navigation.navigate('VPAuthorization', {
+                qrData,
+                selectedCredentialId: item.id,
+              })
+            }
           />
         )}
         contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>{t('home.noCredentials')}</Text>
+        }
       />
     </SafeAreaView>
   );
@@ -42,4 +52,5 @@ const styles = StyleSheet.create({
   backButton: {fontSize: 16, color: '#2563EB', marginRight: 16},
   title: {fontSize: 18, fontWeight: '700', color: '#1F2937'},
   list: {padding: 16},
+  emptyText: {fontSize: 14, color: '#9CA3AF', textAlign: 'center', paddingTop: 40},
 });

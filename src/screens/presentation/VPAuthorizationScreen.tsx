@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   View,
   Text,
@@ -18,17 +18,21 @@ import {
   type PresentationRequest,
 } from '../../services/protocol/oid4vp';
 import type {DIDDocument} from '../../services/protocol/did';
+import {addOperationRecord, addPresentationRecord} from '../../db/recordDao';
 
 type Props = NativeStackScreenProps<PresentationStackParamList, 'VPAuthorization'>;
 
 export default function VPAuthorizationScreen({navigation, route}: Props) {
   const {t} = useTranslation();
-  const {qrData} = route.params;
+  const {qrData, selectedCredentialId} = route.params;
   const {currentWallet, currentCredentials} = useWallet();
 
   const [request, setRequest] = useState<PresentationRequest | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [authorizing, setAuthorizing] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | undefined>(
+    selectedCredentialId,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -47,40 +51,56 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
     };
   }, [qrData]);
 
+  useEffect(() => {
+    if (selectedCredentialId) setSelectedId(selectedCredentialId);
+  }, [selectedCredentialId]);
+
+  const autoSelectedId = useMemo(() => {
+    if (selectedId) return selectedId;
+    if (!request) return undefined;
+    for (const desc of request.presentationDefinition.inputDescriptors) {
+      const match = currentCredentials.find(c => c.credentialType === desc.id);
+      if (match) return match.id;
+    }
+    return currentCredentials[0]?.id;
+  }, [selectedId, request, currentCredentials]);
+
+  const selectedCredential = currentCredentials.find(
+    c => c.id === autoSelectedId,
+  );
+
   const handleAuthorize = async () => {
-    if (!request || !currentWallet?.didDocument) return;
+    if (!request || !currentWallet?.didDocument || !selectedCredential) return;
     setAuthorizing(true);
     try {
       const didDocument = JSON.parse(currentWallet.didDocument) as DIDDocument;
       const keyTag = `wallet_${currentWallet.id}`;
 
-      const vcs = request.presentationDefinition.inputDescriptors
-        .map(desc => {
-          const match =
-            currentCredentials.find(c => c.credentialType === desc.id) ??
-            currentCredentials[0];
-          return match ? {jwt: match.rawJwt} : null;
-        })
-        .filter((v): v is {jwt: string} => v !== null);
+      const result = await generateVP(keyTag, didDocument, request, [
+        {jwt: selectedCredential.rawJwt},
+      ]);
 
-      if (vcs.length === 0) {
-        navigation.replace('VPResult', {
-          success: false,
-          message: t('presentation.result.failed'),
-        });
-        return;
-      }
+      const success = result.code === '0';
+      addPresentationRecord(
+        currentWallet.id,
+        request.verifierDid ?? request.clientId ?? null,
+        [selectedCredential.id],
+        success ? 1 : 0,
+      );
+      addOperationRecord(
+        currentWallet.id,
+        'present',
+        request.verifierDid ?? request.clientId ?? undefined,
+      );
 
-      const result = await generateVP(keyTag, didDocument, request, vcs);
       navigation.replace('VPResult', {
-        success: result.code === '0',
+        success,
         message: result.message,
       });
     } catch (err: unknown) {
-      navigation.replace('VPResult', {
-        success: false,
-        message: err instanceof Error ? err.message : String(err),
-      });
+      const message = err instanceof Error ? err.message : String(err);
+      addOperationRecord(currentWallet.id, 'present', message);
+      navigation.replace('VPResult', {success: false, message});
     } finally {
       setAuthorizing(false);
     }
@@ -137,28 +157,47 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('presentation.selectCredential')}</Text>
-          {currentCredentials.length === 0 ? (
-            <Text style={styles.placeholder}>{t('home.noCredentials')}</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {t('presentation.selectCredential')}
+            </Text>
+            {currentCredentials.length > 1 ? (
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate('ChangeCard', {
+                    qrData,
+                    currentCardId: autoSelectedId,
+                  })
+                }>
+                <Text style={styles.changeLink}>
+                  {t('presentation.changeCard')}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          {selectedCredential ? (
+            <View style={styles.descriptor}>
+              <Text style={styles.descriptorName}>
+                {selectedCredential.displayName ??
+                  selectedCredential.credentialType ??
+                  selectedCredential.id}
+              </Text>
+              <Text style={styles.descriptorPurpose}>
+                {selectedCredential.issuerName ??
+                  selectedCredential.issuerDid ??
+                  ''}
+              </Text>
+            </View>
           ) : (
-            currentCredentials.map(cred => (
-              <View key={cred.id} style={styles.descriptor}>
-                <Text style={styles.descriptorName}>
-                  {cred.displayName ?? cred.credentialType ?? cred.id}
-                </Text>
-                <Text style={styles.descriptorPurpose}>
-                  {cred.issuerName ?? cred.issuerDid ?? ''}
-                </Text>
-              </View>
-            ))
+            <Text style={styles.placeholder}>{t('home.noCredentials')}</Text>
           )}
         </View>
       </ScrollView>
 
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, !selectedCredential && styles.buttonDisabled]}
         onPress={handleAuthorize}
-        disabled={authorizing}>
+        disabled={authorizing || !selectedCredential}>
         {authorizing ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
@@ -178,7 +217,9 @@ const styles = StyleSheet.create({
   verifierLabel: {fontSize: 13, color: '#6B7280', marginBottom: 4},
   verifierName: {fontSize: 16, fontWeight: '600', color: '#1F2937'},
   section: {backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 16},
-  sectionTitle: {fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 12},
+  sectionHeader: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12},
+  sectionTitle: {fontSize: 16, fontWeight: '600', color: '#1F2937'},
+  changeLink: {fontSize: 13, color: '#2563EB', fontWeight: '600'},
   descriptor: {paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#F3F4F6'},
   descriptorName: {fontSize: 15, color: '#1F2937'},
   descriptorPurpose: {fontSize: 13, color: '#6B7280', marginTop: 2},
@@ -186,5 +227,6 @@ const styles = StyleSheet.create({
   errorText: {fontSize: 14, color: '#DC2626', textAlign: 'center', marginBottom: 24},
   loadingText: {fontSize: 14, color: '#6B7280', marginTop: 16},
   button: {backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 16, alignItems: 'center', margin: 24},
+  buttonDisabled: {backgroundColor: '#9CA3AF'},
   buttonText: {color: '#FFFFFF', fontSize: 16, fontWeight: '600'},
 });

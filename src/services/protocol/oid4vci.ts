@@ -8,6 +8,22 @@ export interface CredentialOffer {
   credentialIssuer: string;
   preAuthorizedCode: string;
   credentialConfigurationIds: string[];
+  txCode?: {
+    inputMode?: string;
+    length?: number;
+    description?: string;
+  };
+}
+
+export function isCredentialOfferQr(qrCode: string): boolean {
+  try {
+    if (qrCode.startsWith('openid-credential-offer://')) return true;
+    const url = new URL(qrCode);
+    return url.searchParams.has('credential_offer_uri') ||
+      url.searchParams.has('credential_offer');
+  } catch {
+    return false;
+  }
 }
 
 export interface IssuerMetadata {
@@ -49,11 +65,19 @@ export async function getCredentialOffer(
   const data = response.data;
 
   const grants = data.grants?.['urn:ietf:params:oauth:grant-type:pre-authorized_code'];
+  const rawTx = grants?.tx_code;
 
   return {
     credentialIssuer: data.credential_issuer,
     preAuthorizedCode: grants?.['pre-authorized_code'] ?? '',
     credentialConfigurationIds: data.credential_configuration_ids ?? [],
+    txCode: rawTx
+      ? {
+          inputMode: rawTx.input_mode,
+          length: rawTx.length,
+          description: rawTx.description,
+        }
+      : undefined,
   };
 }
 

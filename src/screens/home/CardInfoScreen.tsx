@@ -46,7 +46,7 @@ export default function CardInfoScreen({navigation, route}: Props) {
       <ScrollView style={styles.content}>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>
-            {credential.displayName ?? credential.credentialType ?? '憑證'}
+            {credential.displayName ?? credential.credentialType ?? t('credential.defaultName')}
           </Text>
           <InfoRow label={t('credential.issuer')} value={credential.issuerName ?? '-'} />
           <InfoRow
@@ -61,7 +61,7 @@ export default function CardInfoScreen({navigation, route}: Props) {
 
         {credentialSubject && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>憑證內容</Text>
+            <Text style={styles.sectionTitle}>{t('credential.content')}</Text>
             {Object.entries(credentialSubject)
               .filter(([key]) => key !== '_sd' && key !== '_sd_alg')
               .map(([key, value]) => (

@@ -111,17 +111,17 @@ export default function WalletSettingScreen({navigation}: Props) {
         </View>
       ) : (
         <>
-          <TouchableOpacity style={styles.menuItem}>
+          <View style={styles.menuItem}>
             <Text style={styles.menuText}>{t('settings.changeWalletName')}</Text>
             <Text style={styles.menuValue}>{currentWallet?.name ?? '-'}</Text>
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <View style={styles.menuItem}>
             <Text style={styles.menuText}>{t('settings.autoLogout')}</Text>
             <Text style={styles.menuValue}>
               {t('settings.autoLogoutMinutes', {minutes: currentWallet?.autoLogoutMinutes ?? 5})}
             </Text>
-          </TouchableOpacity>
+          </View>
 
           {bioSupported && (
             <View style={styles.menuItem}>

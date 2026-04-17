@@ -1,11 +1,13 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {
+  Alert,
   View,
   Text,
   FlatList,
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import {useTranslation} from 'react-i18next';
 import SearchBar from '../../components/SearchBar';
@@ -57,10 +59,16 @@ export default function ShowCredentialsScreen() {
             data={filtered}
             keyExtractor={item => item.did}
             renderItem={({item}) => (
-              <View style={styles.item}>
+              <TouchableOpacity
+                style={styles.item}
+                onPress={() =>
+                  Alert.alert(item.orgName ?? item.did, item.did, [
+                    {text: t('common.ok')},
+                  ])
+                }>
                 <Text style={styles.itemName}>{item.orgName ?? item.did}</Text>
                 <Text style={styles.itemIssuer}>{item.did}</Text>
-              </View>
+              </TouchableOpacity>
             )}
             ListEmptyComponent={
               <Text style={styles.emptyText}>{t('home.noCredentials')}</Text>

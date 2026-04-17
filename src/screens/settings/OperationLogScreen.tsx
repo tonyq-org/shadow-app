@@ -37,7 +37,9 @@ export default function OperationLogScreen({navigation}: Props) {
         renderItem={({item}) => (
           <View style={styles.item}>
             <View style={styles.itemHeader}>
-              <Text style={styles.itemType}>{item.type}</Text>
+              <Text style={styles.itemType}>
+                {t(`operations.${item.type}`, {defaultValue: item.type})}
+              </Text>
               <Text style={styles.itemDate}>
                 {new Date(item.createdAt).toLocaleString()}
               </Text>
@@ -47,7 +49,7 @@ export default function OperationLogScreen({navigation}: Props) {
         )}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>{t('home.noCredentials')}</Text>
+          <Text style={styles.emptyText}>{t('operations.noRecords')}</Text>
         }
       />
     </SafeAreaView>
