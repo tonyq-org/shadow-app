@@ -1,0 +1,94 @@
+{
+  "app": {
+    "name": "Shadow Wallet"
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "delete": "Delete",
+    "save": "Save",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "auth": {
+    "welcome": "Welcome to Digital Credential Wallet",
+    "welcomeSubtitle": "Securely manage your digital credentials",
+    "termsTitle": "Terms of Service",
+    "termsAgree": "I have read and agree to the Terms of Service",
+    "createWallet": "Create Wallet",
+    "walletName": "Wallet Name",
+    "walletNamePlaceholder": "Enter wallet name",
+    "setPinCode": "Set PIN Code",
+    "confirmPinCode": "Confirm PIN Code",
+    "pinCodeMismatch": "PIN codes do not match",
+    "login": "Login",
+    "enterPinCode": "Enter PIN Code",
+    "useBiometric": "Use biometric login",
+    "loginFailed": "Login Failed",
+    "wrongPinCode": "Incorrect PIN code"
+  },
+  "home": {
+    "title": "My Credentials",
+    "noCredentials": "No credentials yet",
+    "noCredentialsHint": "Scan a QR code to add your first credential",
+    "selectWallet": "Select Wallet",
+    "cardRecord": "Usage Records"
+  },
+  "credential": {
+    "add": "Add Credential",
+    "scanQR": "Scan QR Code",
+    "search": "Search Credentials",
+    "enterOTP": "Enter verification code",
+    "addSuccess": "Credential added successfully",
+    "addFailed": "Failed to add credential",
+    "status": {
+      "unverified": "Unverified",
+      "verified": "Verified",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "detail": "Credential Details",
+    "issuer": "Issuer",
+    "issuedAt": "Issued Date",
+    "expiresAt": "Expiry Date"
+  },
+  "presentation": {
+    "title": "Verifiable Presentation",
+    "verifierRequest": "Verifier Request",
+    "selectCredential": "Select Credential",
+    "selectFields": "Select Disclosed Fields",
+    "authorize": "Authorize",
+    "changeCard": "Change Credential",
+    "result": {
+      "success": "Authorization Successful",
+      "failed": "Authorization Failed"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "walletSettings": "Wallet Settings",
+    "changeWalletName": "Change Wallet Name",
+    "changePinCode": "Change PIN Code",
+    "autoLogout": "Auto Logout",
+    "autoLogoutMinutes": "{{minutes}} minutes",
+    "faq": "FAQ",
+    "contact": "Contact Support",
+    "deleteWallet": "Delete Wallet",
+    "deleteWalletConfirm": "Are you sure you want to delete this wallet? This action cannot be undone.",
+    "operationLog": "Operation Log",
+    "version": "Version"
+  },
+  "scan": {
+    "title": "Scan QR Code",
+    "hint": "Place QR code inside the frame",
+    "permissionDenied": "Camera permission is required to scan QR codes"
+  }
+}

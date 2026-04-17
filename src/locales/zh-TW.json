@@ -1,0 +1,94 @@
+{
+  "app": {
+    "name": "Shadow Wallet"
+  },
+  "common": {
+    "confirm": "確認",
+    "cancel": "取消",
+    "ok": "好",
+    "back": "返回",
+    "next": "下一步",
+    "done": "完成",
+    "delete": "刪除",
+    "save": "儲存",
+    "search": "搜尋",
+    "loading": "載入中...",
+    "error": "錯誤",
+    "success": "成功",
+    "retry": "重試",
+    "close": "關閉"
+  },
+  "auth": {
+    "welcome": "歡迎使用數位憑證皮夾",
+    "welcomeSubtitle": "安全管理您的數位憑證",
+    "termsTitle": "服務條款",
+    "termsAgree": "我已閱讀並同意服務條款",
+    "createWallet": "建立皮夾",
+    "walletName": "皮夾名稱",
+    "walletNamePlaceholder": "請輸入皮夾名稱",
+    "setPinCode": "設定 PIN 碼",
+    "confirmPinCode": "確認 PIN 碼",
+    "pinCodeMismatch": "PIN 碼不一致",
+    "login": "登入",
+    "enterPinCode": "請輸入 PIN 碼",
+    "useBiometric": "使用生物辨識登入",
+    "loginFailed": "登入失敗",
+    "wrongPinCode": "PIN 碼錯誤"
+  },
+  "home": {
+    "title": "我的憑證",
+    "noCredentials": "尚無憑證",
+    "noCredentialsHint": "掃描 QR Code 新增您的第一張憑證",
+    "selectWallet": "選擇皮夾",
+    "cardRecord": "使用紀錄"
+  },
+  "credential": {
+    "add": "新增憑證",
+    "scanQR": "掃描 QR Code",
+    "search": "搜尋憑證",
+    "enterOTP": "請輸入驗證碼",
+    "addSuccess": "憑證新增成功",
+    "addFailed": "憑證新增失敗",
+    "status": {
+      "unverified": "未驗證",
+      "verified": "已驗證",
+      "revoked": "已撤銷",
+      "expired": "已過期"
+    },
+    "detail": "憑證詳情",
+    "issuer": "發行者",
+    "issuedAt": "發行日期",
+    "expiresAt": "到期日期"
+  },
+  "presentation": {
+    "title": "授權出示",
+    "verifierRequest": "驗證方請求",
+    "selectCredential": "選擇憑證",
+    "selectFields": "選擇揭露欄位",
+    "authorize": "授權",
+    "changeCard": "更換憑證",
+    "result": {
+      "success": "授權成功",
+      "failed": "授權失敗"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "walletSettings": "皮夾設定",
+    "changeWalletName": "變更皮夾名稱",
+    "changePinCode": "變更 PIN 碼",
+    "autoLogout": "自動登出",
+    "autoLogoutMinutes": "{{minutes}} 分鐘",
+    "faq": "常見問題",
+    "contact": "聯絡客服",
+    "deleteWallet": "刪除皮夾",
+    "deleteWalletConfirm": "確定要刪除此皮夾？此操作無法復原。",
+    "operationLog": "操作紀錄",
+    "version": "版本"
+  },
+  "scan": {
+    "title": "掃描 QR Code",
+    "hint": "將 QR Code 放入框內",
+    "permissionDenied": "需要相機權限才能掃描 QR Code"
+  }
+}

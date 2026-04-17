@@ -1,0 +1,62 @@
+import React from 'react';
+import {View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {useTranslation} from 'react-i18next';
+import type {HomeStackParamList} from '../../navigation/types';
+
+type Props = NativeStackScreenProps<HomeStackParamList, 'CardRecord'>;
+
+export default function CardRecordScreen({navigation}: Props) {
+  const {t} = useTranslation();
+
+  // TODO: load records from database
+  const records: Array<{id: string; type: string; detail: string; date: string}> = [];
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backButton}>← {t('common.back')}</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>{t('home.cardRecord')}</Text>
+      </View>
+
+      <FlatList
+        data={records}
+        keyExtractor={item => item.id}
+        renderItem={({item}) => (
+          <View style={styles.recordItem}>
+            <Text style={styles.recordType}>{item.type}</Text>
+            <Text style={styles.recordDetail}>{item.detail}</Text>
+            <Text style={styles.recordDate}>{item.date}</Text>
+          </View>
+        )}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>暫無紀錄</Text>
+          </View>
+        }
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {flex: 1, backgroundColor: '#F9FAFB'},
+  header: {flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFFFFF'},
+  backButton: {fontSize: 16, color: '#2563EB', marginRight: 16},
+  title: {fontSize: 18, fontWeight: '700', color: '#1F2937'},
+  list: {padding: 16},
+  recordItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+  },
+  recordType: {fontSize: 14, fontWeight: '600', color: '#1F2937'},
+  recordDetail: {fontSize: 13, color: '#6B7280', marginTop: 4},
+  recordDate: {fontSize: 12, color: '#9CA3AF', marginTop: 4},
+  empty: {alignItems: 'center', paddingTop: 80},
+  emptyText: {fontSize: 16, color: '#9CA3AF'},
+});
