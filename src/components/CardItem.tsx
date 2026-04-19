@@ -94,8 +94,7 @@ export default function CardItem({
     [credential.issuerName, credential.issuerDid],
   );
 
-  const displayName =
-    credential.displayName ?? credential.credentialType ?? t('credential.defaultName');
+  const displayName = credential.displayName ?? t('credential.defaultName');
   const holder = holderName ?? '— · —';
   const idLabel = idNumber ?? (credential.id.slice(0, 4).toUpperCase() + ' · ' + credential.id.slice(-8).toUpperCase());
   const validThru = formatExpiry(credential.expiresAt);
@@ -139,9 +138,6 @@ export default function CardItem({
         <View style={styles.artworkContent} pointerEvents="none">
           <View style={styles.artworkTopRow}>
             <View style={{flex: 1, paddingRight: 12}}>
-              <Text style={styles.artworkCategory} numberOfLines={1}>
-                {credential.credentialType ?? ' '}
-              </Text>
               <Text style={styles.artworkName} numberOfLines={2}>
                 {displayName}
               </Text>

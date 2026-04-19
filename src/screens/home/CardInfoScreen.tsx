@@ -13,7 +13,7 @@ import {useTranslation} from 'react-i18next';
 import type {HomeStackParamList} from '../../navigation/types';
 import {useWalletStore} from '../../store/walletStore';
 import * as credentialDao from '../../db/credentialDao';
-import {extractCardDisplay} from '../../utils/credentialDisplay';
+import {extractCardDisplay, extractCredentialType} from '../../utils/credentialDisplay';
 import {colors, type as fonts} from '../../theme/tokens';
 import CardItem from '../../components/CardItem';
 import {IconChevron} from '../../components/icons';
@@ -42,9 +42,11 @@ export default function CardInfoScreen({navigation, route}: Props) {
     const display = extractCardDisplay(credential.rawJwt);
     const subject = display.subject;
 
+    const vcType = extractCredentialType(credential.rawJwt);
     const meta: Row[] = [
       {label: 'ISSUER', value: credential.issuerName ?? '—', mono: false},
       {label: 'ISSUER · DID', value: shortDid(credential.issuerDid), mono: true},
+      {label: 'TYPE', value: vcType ?? '—', mono: true},
       {label: 'CREDENTIAL · ID', value: credential.id, mono: true},
       {
         label: 'ISSUED',

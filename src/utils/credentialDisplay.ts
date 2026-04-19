@@ -7,6 +7,21 @@ export interface CardDisplayFields {
   subject: Record<string, unknown>;
 }
 
+export function extractCredentialType(rawJwt: string): string | undefined {
+  try {
+    const decoded = sdJwtDecode(rawJwt);
+    const payload = decoded.payload as Record<string, unknown>;
+    const vc = (payload.vc as Record<string, unknown>) ?? payload;
+    const types = vc.type;
+    if (!Array.isArray(types)) return undefined;
+    return types
+      .filter((x): x is string => typeof x === 'string')
+      .find(x => x !== 'VerifiableCredential');
+  } catch {
+    return undefined;
+  }
+}
+
 const HOLDER_KEYS = [
   'name',
   'full_name',

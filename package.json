@@ -27,6 +27,7 @@
     "axios": "^1.15.0",
     "fflate": "^0.8.2",
     "i18next": "^26.0.5",
+    "jsonpath-plus": "^10.4.0",
     "lottie-react-native": "^7.3.6",
     "react": "19.2.3",
     "react-i18next": "^17.0.4",

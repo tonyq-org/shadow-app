@@ -17,6 +17,10 @@ import {
   generateVP,
   type PresentationRequest,
 } from '../../services/protocol/oid4vp';
+import {
+  findMatchingCredential,
+  extractRequestedClaimKeys,
+} from '../../services/protocol/presentationMatch';
 import type {DIDDocument} from '../../services/protocol/did';
 import {sdJwtDecode} from '../../services/protocol/sdjwt';
 import {addOperationRecord, addPresentationRecord} from '../../db/recordDao';
@@ -68,10 +72,10 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
     if (selectedId) return selectedId;
     if (!request) return undefined;
     for (const desc of request.presentationDefinition.inputDescriptors) {
-      const match = currentCredentials.find(c => c.credentialType === desc.id);
+      const match = findMatchingCredential(desc, currentCredentials);
       if (match) return match.id;
     }
-    return currentCredentials[0]?.id;
+    return undefined;
   }, [selectedId, request, currentCredentials]);
 
   const selectedCredential = currentCredentials.find(c => c.id === autoSelectedId);
@@ -82,12 +86,7 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
     }
     const reqKeys = new Set<string>();
     for (const desc of request.presentationDefinition.inputDescriptors) {
-      for (const f of desc.constraints?.fields ?? []) {
-        for (const p of f.path) {
-          const m = p.match(/\.([A-Za-z0-9_]+)$/);
-          if (m) reqKeys.add(m[1]);
-        }
-      }
+      for (const k of extractRequestedClaimKeys(desc)) reqKeys.add(k);
     }
     let subject: Record<string, unknown> = {};
     try {
