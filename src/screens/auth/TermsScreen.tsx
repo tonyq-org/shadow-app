@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-} from 'react-native';
+  TouchableOpacity} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {AuthStackParamList} from '../../navigation/types';
+import {colors} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Terms'>;
 
@@ -66,25 +66,25 @@ Shadow Wallet 是一個開源的數位憑證管理工具，遵循 W3C Verifiable
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface.surface,
     padding: 24,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text.primary,
     marginBottom: 16,
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.surface.bg,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
   },
   termsText: {
     fontSize: 14,
-    color: '#374151',
+    color: colors.text.primary,
     lineHeight: 22,
   },
   checkboxRow: {
@@ -97,36 +97,36 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#D1D5DB',
+    borderColor: colors.surface.line,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   checkboxChecked: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
+    backgroundColor: colors.brand.brass,
+    borderColor: colors.brand.brass,
   },
   checkmark: {
-    color: '#FFFFFF',
+    color: colors.brand.ink,
     fontSize: 14,
     fontWeight: '700',
   },
   checkboxLabel: {
     fontSize: 14,
-    color: '#374151',
+    color: colors.text.primary,
     flex: 1,
   },
   button: {
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.brand.brass,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
   },
   buttonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.brand.ivory15,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: colors.brand.ink,
     fontSize: 16,
     fontWeight: '600',
   },

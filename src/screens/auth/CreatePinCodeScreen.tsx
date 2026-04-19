@@ -4,9 +4,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
-  Alert,
-} from 'react-native';
+  Alert} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {AuthStackParamList} from '../../navigation/types';
@@ -15,6 +14,8 @@ import {useAuthStore} from '../../store/authStore';
 import PinCodeInput from '../../components/PinCodeInput';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import {generateSalt, hashPinAsync} from '../../utils/pin';
+import {colors, type as fonts} from '../../theme/tokens';
+import {IconChevron} from '../../components/icons';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'CreatePinCode'>;
 
@@ -56,22 +57,32 @@ export default function CreatePinCodeScreen({navigation, route}: Props) {
     }
   };
 
+  const stepLabel = step === 'set' ? 'STEP · 02 · OF · 03' : 'STEP · 03 · OF · 03';
+  const title = step === 'set' ? '設定您的\n六位數 PIN 碼' : '再次輸入\n以確認 PIN 碼';
+  const body =
+    step === 'set'
+      ? 'PIN 碼將透過 PBKDF2 於硬體安全模組推導加密金鑰，永不離開本機。'
+      : '請重複輸入剛才設定的 PIN 碼，以避免輸入錯誤。';
+
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}>
+          <IconChevron size={18} color={colors.text.primary} direction="left" />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.content}>
-        <Text style={styles.title}>
-          {step === 'set' ? t('auth.setPinCode') : t('auth.confirmPinCode')}
-        </Text>
-        <Text style={styles.subtitle}>
-          {step === 'set'
-            ? '設定 6 位數 PIN 碼來保護您的皮夾'
-            : '再次輸入 PIN 碼以確認'}
-        </Text>
-        <PinCodeInput
-          length={6}
-          onComplete={handlePinComplete}
-          disabled={loading}
-        />
+        <Text style={styles.stepLabel}>{stepLabel}</Text>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.body}>{body}</Text>
+
+        <View style={styles.pinSlot}>
+          <PinCodeInput length={6} onComplete={handlePinComplete} disabled={loading} />
+        </View>
       </View>
       <LoadingOverlay visible={loading} message={t('auth.verifyingPin')} />
     </SafeAreaView>
@@ -79,25 +90,39 @@ export default function CreatePinCodeScreen({navigation, route}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 24,
-  },
-  content: {
-    flex: 1,
-    paddingTop: 80,
+  container: {flex: 1, backgroundColor: colors.surface.bg},
+  header: {paddingHorizontal: 16, paddingTop: 8},
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.surface.line,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {flex: 1, paddingHorizontal: 28, paddingTop: 20},
+  stepLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 2,
+    color: colors.brand.brass,
+    marginBottom: 14,
   },
   title: {
-    fontSize: 24,
+    fontFamily: fonts.serifTC,
+    fontSize: 32,
+    lineHeight: 40,
+    color: colors.text.primary,
     fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 48,
+  body: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.text.dim,
+    lineHeight: 20,
+    marginTop: 14,
+    marginBottom: 40,
   },
+  pinSlot: {flex: 1},
 });

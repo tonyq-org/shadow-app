@@ -19,7 +19,7 @@ export type CredentialStackParamList = {
   AddCredential: undefined;
   ScanQR: undefined;
   SearchCredential: undefined;
-  AddResult: {success: boolean; message?: string};
+  AddResult: {success: boolean; message?: string; credentialId?: string};
   CredentialInfo: {credentialId: string};
 };
 

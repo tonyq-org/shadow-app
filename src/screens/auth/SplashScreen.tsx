@@ -3,6 +3,7 @@ import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {AuthStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
+import {colors} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Splash'>;
 
@@ -35,17 +36,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface.surface,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text.primary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.text.dim,
     marginBottom: 48,
   },
   spinner: {

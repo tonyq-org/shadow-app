@@ -1,8 +1,10 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {PresentationStackParamList} from '../../navigation/types';
+import {colors} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<PresentationStackParamList, 'VPResult'>;
 
@@ -31,11 +33,11 @@ export default function VPResultScreen({navigation, route}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#FFFFFF', padding: 24},
+  container: {flex: 1, backgroundColor: colors.surface.surface, padding: 24},
   content: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   icon: {fontSize: 64, marginBottom: 24},
-  title: {fontSize: 22, fontWeight: '700', color: '#1F2937', marginBottom: 8},
-  message: {fontSize: 14, color: '#6B7280', textAlign: 'center'},
-  button: {backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 16, alignItems: 'center'},
+  title: {fontSize: 22, fontWeight: '700', color: colors.text.primary, marginBottom: 8},
+  message: {fontSize: 14, color: colors.text.dim, textAlign: 'center'},
+  button: {backgroundColor: colors.brand.brass, borderRadius: 12, paddingVertical: 16, alignItems: 'center'},
   buttonText: {color: '#FFFFFF', fontSize: 16, fontWeight: '600'},
 });

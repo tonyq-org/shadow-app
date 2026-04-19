@@ -1,10 +1,12 @@
 import React from 'react';
-import {View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
+import {View, Text, FlatList, StyleSheet, TouchableOpacity} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {PresentationStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
 import CardItem from '../../components/CardItem';
+import {colors} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<PresentationStackParamList, 'ChangeCard'>;
 
@@ -47,10 +49,10 @@ export default function ChangeCardScreen({navigation, route}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F9FAFB'},
-  header: {flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFFFFF'},
-  backButton: {fontSize: 16, color: '#2563EB', marginRight: 16},
-  title: {fontSize: 18, fontWeight: '700', color: '#1F2937'},
+  container: {flex: 1, backgroundColor: colors.surface.bg},
+  header: {flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.surface.surface},
+  backButton: {fontSize: 16, color: colors.brand.brass, marginRight: 16},
+  title: {fontSize: 18, fontWeight: '700', color: colors.text.primary},
   list: {padding: 16},
-  emptyText: {fontSize: 14, color: '#9CA3AF', textAlign: 'center', paddingTop: 40},
+  emptyText: {fontSize: 14, color: colors.text.mute, textAlign: 'center', paddingTop: 40},
 });

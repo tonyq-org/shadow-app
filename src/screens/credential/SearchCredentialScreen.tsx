@@ -4,16 +4,16 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+  ActivityIndicator} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {CredentialStackParamList} from '../../navigation/types';
 import SearchBar from '../../components/SearchBar';
 import {fetchTrustList} from '../../services/api/trustList';
 import type {Issuer} from '../../services/verification/vcVerifier';
+import {colors} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<CredentialStackParamList, 'SearchCredential'>;
 
@@ -89,13 +89,13 @@ export default function SearchCredentialScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F9FAFB'},
-  header: {flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFFFFF'},
-  backButton: {fontSize: 16, color: '#2563EB', marginRight: 16},
-  title: {fontSize: 18, fontWeight: '700', color: '#1F2937'},
+  container: {flex: 1, backgroundColor: colors.surface.bg},
+  header: {flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.surface.surface},
+  backButton: {fontSize: 16, color: colors.brand.brass, marginRight: 16},
+  title: {fontSize: 18, fontWeight: '700', color: colors.text.primary},
   content: {padding: 16, flex: 1},
-  resultItem: {backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 8},
-  resultName: {fontSize: 16, fontWeight: '600', color: '#1F2937'},
-  resultIssuer: {fontSize: 12, color: '#6B7280', marginTop: 4},
-  emptyText: {fontSize: 14, color: '#9CA3AF', textAlign: 'center', paddingTop: 40},
+  resultItem: {backgroundColor: colors.surface.surface, borderRadius: 12, padding: 16, marginBottom: 8},
+  resultName: {fontSize: 16, fontWeight: '600', color: colors.text.primary},
+  resultIssuer: {fontSize: 12, color: colors.text.dim, marginTop: 4},
+  emptyText: {fontSize: 14, color: colors.text.mute, textAlign: 'center', paddingTop: 40},
 });

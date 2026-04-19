@@ -51,6 +51,8 @@
     "applying": "正在申請憑證...",
     "addSuccess": "憑證新增成功",
     "addFailed": "憑證新增失敗",
+    "viewCard": "查看卡片",
+    "autoOpenHint": "{{seconds}} 秒後自動開啟卡片",
     "status": {
       "unverified": "未驗證",
       "verified": "已驗證",
@@ -62,7 +64,9 @@
     "content": "憑證內容",
     "issuer": "發行者",
     "issuedAt": "發行日期",
-    "expiresAt": "到期日期"
+    "expiresAt": "到期日期",
+    "tabContent": "內容",
+    "tabMetadata": "詮釋資料"
   },
   "presentation": {
     "title": "授權出示",
@@ -99,6 +103,12 @@
     "hint": "將 QR Code 放入框內",
     "permissionDenied": "需要相機權限才能掃描 QR Code",
     "unsupportedQr": "無法辨識的 QR Code 格式"
+  },
+  "tabs": {
+    "credentials": "憑證",
+    "add": "新增",
+    "present": "出示",
+    "settings": "設定"
   },
   "operations": {
     "title": "操作紀錄",

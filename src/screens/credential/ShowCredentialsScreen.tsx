@@ -5,14 +5,14 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
+  TouchableOpacity} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import SearchBar from '../../components/SearchBar';
 import {fetchTrustList} from '../../services/api/trustList';
 import type {Issuer} from '../../services/verification/vcVerifier';
+import {colors} from '../../theme/tokens';
 
 export default function ShowCredentialsScreen() {
   const {t} = useTranslation();
@@ -81,11 +81,11 @@ export default function ShowCredentialsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F9FAFB'},
-  title: {fontSize: 24, fontWeight: '700', color: '#1F2937', padding: 24, paddingBottom: 0, backgroundColor: '#FFFFFF'},
+  container: {flex: 1, backgroundColor: colors.surface.bg},
+  title: {fontSize: 24, fontWeight: '700', color: colors.text.primary, padding: 24, paddingBottom: 0, backgroundColor: colors.surface.surface},
   content: {padding: 16, flex: 1},
-  item: {backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 8},
-  itemName: {fontSize: 16, fontWeight: '600', color: '#1F2937'},
-  itemIssuer: {fontSize: 12, color: '#6B7280', marginTop: 4},
-  emptyText: {fontSize: 14, color: '#9CA3AF', textAlign: 'center', paddingTop: 40},
+  item: {backgroundColor: colors.surface.surface, borderRadius: 12, padding: 16, marginBottom: 8},
+  itemName: {fontSize: 16, fontWeight: '600', color: colors.text.primary},
+  itemIssuer: {fontSize: 12, color: colors.text.dim, marginTop: 4},
+  emptyText: {fontSize: 14, color: colors.text.mute, textAlign: 'center', paddingTop: 40},
 });

@@ -4,12 +4,12 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-} from 'react-native';
+  TouchableOpacity} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {AuthStackParamList} from '../../navigation/types';
+import {colors} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'CreateWalletName'>;
 
@@ -49,7 +49,7 @@ export default function CreateWalletNameScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface.surface,
     padding: 24,
   },
   content: {
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text.primary,
     marginBottom: 32,
   },
   label: {
@@ -70,21 +70,21 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: colors.surface.line,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#1F2937',
+    color: colors.text.primary,
   },
   counter: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.text.mute,
     textAlign: 'right',
     marginTop: 4,
   },
   button: {
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.brand.brass,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

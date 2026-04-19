@@ -1,8 +1,10 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {CredentialStackParamList} from '../../navigation/types';
+import {colors} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<CredentialStackParamList, 'AddCredential'>;
 
@@ -37,20 +39,20 @@ export default function AddCredentialScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F9FAFB', padding: 24},
-  title: {fontSize: 24, fontWeight: '700', color: '#1F2937', marginBottom: 24},
+  container: {flex: 1, backgroundColor: colors.surface.bg, padding: 24},
+  title: {fontSize: 24, fontWeight: '700', color: colors.text.primary, marginBottom: 24},
   option: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.surface.line,
   },
   optionIcon: {fontSize: 32, marginRight: 16},
   optionContent: {flex: 1},
-  optionTitle: {fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 4},
-  optionDesc: {fontSize: 13, color: '#6B7280'},
+  optionTitle: {fontSize: 16, fontWeight: '600', color: colors.text.primary, marginBottom: 4},
+  optionDesc: {fontSize: 13, color: colors.text.dim},
 });

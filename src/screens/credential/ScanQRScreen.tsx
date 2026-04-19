@@ -2,13 +2,12 @@ import React, {useState} from 'react';
 import {
   Alert,
   Modal,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-} from 'react-native';
+  View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {CredentialStackParamList} from '../../navigation/types';
@@ -19,13 +18,17 @@ import {
   applyVC,
   getCredentialOffer,
   isCredentialOfferQr,
+  pickCredentialDisplay,
   type CredentialOffer,
 } from '../../services/protocol/oid4vci';
+import i18n from '../../config/i18n';
 import {sdJwtDecode} from '../../services/protocol/sdjwt';
+import {resolveDisplayImage} from '../../utils/credentialDisplay';
 import type {DIDDocument} from '../../services/protocol/did';
 import {saveCredential} from '../../db/credentialDao';
 import {addOperationRecord} from '../../db/recordDao';
 import {useWalletStore} from '../../store/walletStore';
+import {colors, type as fonts} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<CredentialStackParamList, 'ScanQR'>;
 
@@ -40,6 +43,7 @@ export default function ScanQRScreen({navigation}: Props) {
     offer: CredentialOffer;
   } | null>(null);
   const [txCode, setTxCode] = useState('');
+  const [resetKey, setResetKey] = useState(0);
 
   const handleScan = async (data: string) => {
     if (!currentWallet?.didDocument) {
@@ -49,7 +53,8 @@ export default function ScanQRScreen({navigation}: Props) {
     }
     if (!isCredentialOfferQr(data)) {
       Alert.alert(t('credential.addFailed'), t('scan.unsupportedQr'), [
-        {text: t('common.ok'), onPress: () => navigation.goBack()},
+        {text: t('common.cancel'), onPress: () => navigation.goBack(), style: 'cancel'},
+        {text: t('common.retry'), onPress: () => setResetKey(k => k + 1)},
       ]);
       return;
     }
@@ -61,7 +66,7 @@ export default function ScanQRScreen({navigation}: Props) {
         setBusy(false);
         return;
       }
-      await runApply(data, '');
+      await runApply(offer, '');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setBusy(false);
@@ -69,13 +74,13 @@ export default function ScanQRScreen({navigation}: Props) {
     }
   };
 
-  const runApply = async (qrCode: string, code: string) => {
+  const runApply = async (offer: CredentialOffer, code: string) => {
     if (!currentWallet?.didDocument) return;
     setBusy(true);
     try {
       const didDocument = JSON.parse(currentWallet.didDocument) as DIDDocument;
       const keyTag = `wallet_${currentWallet.id}`;
-      const result = await applyVC(keyTag, didDocument, qrCode, code);
+      const result = await applyVC(keyTag, didDocument, offer, code);
 
       if (result.code !== '0' || !result.data?.credential) {
         addOperationRecord(currentWallet.id, 'add', result.message);
@@ -88,9 +93,7 @@ export default function ScanQRScreen({navigation}: Props) {
 
       const jwt = result.data.credential;
       const issuerDid = result.data.metadata?.credentialIssuer;
-      const credentialId = result.data.metadata
-        ? Object.keys(result.data.metadata.credentialConfigurationsSupported)[0]
-        : undefined;
+      const credentialId = result.data.credentialId;
 
       let displayName: string | undefined;
       let issuedAt: number | undefined;
@@ -98,10 +101,26 @@ export default function ScanQRScreen({navigation}: Props) {
       try {
         const decoded = sdJwtDecode(jwt);
         const vc = decoded.payload.vc as Record<string, unknown> | undefined;
-        displayName = (vc?.name as string | undefined) ?? credentialId;
+        displayName = vc?.name as string | undefined;
         issuedAt = decoded.payload.iat as number | undefined;
         expiresAt = decoded.payload.exp as number | undefined;
       } catch {}
+
+      let displayImage: string | undefined;
+      if (result.data.metadata && credentialId) {
+        const display = pickCredentialDisplay(
+          result.data.metadata.credentialConfigurationsSupported,
+          credentialId,
+          i18n.language,
+        );
+        // Issuer-supplied name beats the JWT's vc.name; the credentialId is
+        // an opaque key like "00000000_test111" — only use it as a last resort.
+        displayName = display?.name ?? displayName ?? credentialId;
+        const uri = display?.background_image?.uri ?? display?.logo?.uri;
+        displayImage = await resolveDisplayImage(uri);
+      } else {
+        displayName = displayName ?? credentialId;
+      }
 
       const saved = saveCredential(
         currentWallet.id,
@@ -110,7 +129,7 @@ export default function ScanQRScreen({navigation}: Props) {
         undefined,
         credentialId,
         displayName,
-        undefined,
+        displayImage,
         issuedAt,
         expiresAt,
       );
@@ -121,7 +140,7 @@ export default function ScanQRScreen({navigation}: Props) {
         displayName ?? credentialId ?? issuerDid,
       );
 
-      navigation.replace('AddResult', {success: true});
+      navigation.replace('AddResult', {success: true, credentialId: saved.id});
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       addOperationRecord(currentWallet.id, 'add', message);
@@ -135,10 +154,10 @@ export default function ScanQRScreen({navigation}: Props) {
     if (!pendingOffer) return;
     const expected = pendingOffer.offer.txCode?.length;
     if (expected && txCode.length !== expected) return;
-    const {qrCode} = pendingOffer;
+    const {offer} = pendingOffer;
     setPendingOffer(null);
     setTxCode('');
-    runApply(qrCode, txCode);
+    runApply(offer, txCode);
   };
 
   return (
@@ -147,6 +166,7 @@ export default function ScanQRScreen({navigation}: Props) {
         onScan={handleScan}
         onCancel={() => navigation.goBack()}
         active={!busy && pendingOffer === null}
+        resetKey={resetKey}
       />
       <Modal
         visible={pendingOffer !== null}
@@ -204,33 +224,61 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#000000'},
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(17, 24, 39, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'center',
     padding: 32,
   },
-  modalCard: {backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24},
-  modalTitle: {fontSize: 18, fontWeight: '700', color: '#1F2937'},
-  modalDesc: {fontSize: 13, color: '#6B7280', marginTop: 8},
+  modalCard: {
+    backgroundColor: colors.surface.surface,
+    borderRadius: 18,
+    padding: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.surface.line,
+  },
+  modalTitle: {
+    fontFamily: fonts.serifTC,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  modalDesc: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.text.dim,
+    marginTop: 8,
+  },
   input: {
     marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.surface.line,
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
     fontSize: 18,
     letterSpacing: 4,
     textAlign: 'center',
+    color: colors.text.primary,
+    backgroundColor: 'rgba(246,241,227,0.03)',
   },
   modalRow: {flexDirection: 'row', marginTop: 20, gap: 12},
   modalBtn: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.surface.line,
+    backgroundColor: 'transparent',
   },
-  modalBtnPrimary: {backgroundColor: '#2563EB'},
-  modalBtnText: {fontSize: 15, color: '#1F2937', fontWeight: '600'},
-  modalBtnTextPrimary: {color: '#FFFFFF'},
+  modalBtnPrimary: {
+    backgroundColor: colors.brand.brass,
+    borderColor: colors.brand.brass,
+  },
+  modalBtnText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.text.primary,
+    fontWeight: '600',
+  },
+  modalBtnTextPrimary: {color: colors.brand.ink, fontWeight: '700'},
 });

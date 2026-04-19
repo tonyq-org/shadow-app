@@ -1,5 +1,5 @@
 import React, {useMemo} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions} from 'react-native';
+import {View, Text, Image, StyleSheet, TouchableOpacity, useWindowDimensions} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import type {Credential} from '../store/walletStore';
 import {CredentialStatus} from '../store/walletStore';
@@ -24,6 +24,14 @@ interface Props {
   emblem?: EmblemKey;
   holderName?: string;
   idNumber?: string;
+  picture?: string;
+}
+
+function pictureUri(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  if (raw.startsWith('data:') || raw.startsWith('http')) return raw;
+  // Bare base64 — assume JPEG (TWDIW portraits) and wrap it.
+  return `data:image/jpeg;base64,${raw}`;
 }
 
 function inferEmblem(credType: string | null): EmblemKey {
@@ -67,7 +75,9 @@ export default function CardItem({
   emblem,
   holderName,
   idNumber,
+  picture,
 }: Props) {
+  const portrait = pictureUri(picture);
   const {t} = useTranslation();
   const {width: screenWidth} = useWindowDimensions();
   const cardWidth = width ?? Math.min(screenWidth - 48, 354);
@@ -91,6 +101,77 @@ export default function CardItem({
   const validThru = formatExpiry(credential.expiresAt);
 
   const Container = onPress ? TouchableOpacity : View;
+  const hasArtwork = !!credential.displayImage;
+
+  // When the issuer supplies a full-bleed card background, let it own the
+  // visual treatment — no gradient/guilloche/holo/scrim — and use dark ink
+  // text to read on (typically light) artwork. Matches TWDIW official app.
+  if (hasArtwork) {
+    const statusBadge = isExpired
+      ? {label: t('credential.status.expired'), tone: 'danger' as const}
+      : credential.status === CredentialStatus.Revoked
+        ? {label: t('credential.status.revoked'), tone: 'danger' as const}
+        : credential.status === CredentialStatus.Verified
+          ? {label: t('credential.status.verified'), tone: 'ok' as const}
+          : {label: t('credential.status.unverified'), tone: 'muted' as const};
+
+    return (
+      <Container
+        style={[
+          styles.wrapper,
+          {width: cardWidth, height: cardHeight},
+          selected && styles.selected,
+        ]}
+        activeOpacity={onPress ? 0.85 : 1}
+        onPress={onPress}>
+        <Image
+          source={{uri: credential.displayImage!}}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+        {isExpired && (
+          <View
+            style={[StyleSheet.absoluteFill, styles.expiredOverlay]}
+            pointerEvents="none"
+          />
+        )}
+
+        <View style={styles.artworkContent} pointerEvents="none">
+          <View style={styles.artworkTopRow}>
+            <View style={{flex: 1, paddingRight: 12}}>
+              <Text style={styles.artworkCategory} numberOfLines={1}>
+                {credential.credentialType ?? ' '}
+              </Text>
+              <Text style={styles.artworkName} numberOfLines={2}>
+                {displayName}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.artworkBottomRow}>
+            <Text style={styles.artworkIdNumber} numberOfLines={1}>
+              {idNumber ?? idLabel}
+            </Text>
+            <View
+              style={[
+                styles.artworkBadge,
+                statusBadge.tone === 'danger' && styles.artworkBadgeDanger,
+                statusBadge.tone === 'ok' && styles.artworkBadgeOk,
+              ]}>
+              <Text
+                style={[
+                  styles.artworkBadgeText,
+                  statusBadge.tone === 'danger' && styles.artworkBadgeTextDanger,
+                  statusBadge.tone === 'ok' && styles.artworkBadgeTextOk,
+                ]}>
+                {statusBadge.label}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Container>
+    );
+  }
 
   return (
     <Container
@@ -124,7 +205,11 @@ export default function CardItem({
               {displayName}
             </Text>
           </View>
-          <Emblem emblem={emblemKey} size={42} color={colors.brand.brass} />
+          {portrait ? (
+            <Image source={{uri: portrait}} style={styles.portrait} resizeMode="cover" />
+          ) : (
+            <Emblem emblem={emblemKey} size={42} color={colors.brand.brass} />
+          )}
         </View>
 
         <View style={styles.bottomBlock}>
@@ -199,7 +284,83 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     justifyContent: 'space-between',
   },
+  bgScrim: {backgroundColor: 'rgba(8,12,20,0.55)'},
+  expiredOverlay: {
+    backgroundColor: 'rgba(246,241,227,0.55)',
+  },
+  artworkContent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+  },
+  artworkTopRow: {flexDirection: 'row', alignItems: 'flex-start'},
+  artworkCategory: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    letterSpacing: 0.4,
+    color: 'rgba(20,20,20,0.65)',
+    marginBottom: 4,
+  },
+  artworkName: {
+    fontFamily: fonts.serifTC ?? fonts.serif,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    lineHeight: 24,
+    color: '#141414',
+  },
+  artworkBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(20,20,20,0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(20,20,20,0.18)',
+  },
+  artworkBadgeDanger: {
+    backgroundColor: 'rgba(200,50,50,0.12)',
+    borderColor: 'rgba(200,50,50,0.45)',
+  },
+  artworkBadgeOk: {
+    backgroundColor: 'rgba(20,120,70,0.14)',
+    borderColor: 'rgba(20,120,70,0.45)',
+  },
+  artworkBadgeText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 10,
+    letterSpacing: 0.4,
+    color: 'rgba(20,20,20,0.75)',
+  },
+  artworkBadgeTextDanger: {color: '#8A1F1F'},
+  artworkBadgeTextOk: {color: '#1F6B42'},
+  artworkIdNumber: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 13,
+    letterSpacing: 1.5,
+    color: '#141414',
+    opacity: 0.85,
+    flex: 1,
+    marginRight: 12,
+  },
+  artworkBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   topRow: {flexDirection: 'row', alignItems: 'flex-start'},
+  portrait: {
+    width: 52,
+    height: 64,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: colors.brand.brass66,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
   issuerMono: {
     fontFamily: fonts.mono,
     fontSize: 9,

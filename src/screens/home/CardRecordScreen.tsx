@@ -1,10 +1,12 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
+import {View, Text, FlatList, StyleSheet, TouchableOpacity} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {HomeStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
 import {getOperationRecords, type OperationRecord} from '../../db/recordDao';
+import {colors} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CardRecord'>;
 
@@ -57,20 +59,20 @@ export default function CardRecordScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F9FAFB'},
-  header: {flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFFFFF'},
-  backButton: {fontSize: 16, color: '#2563EB', marginRight: 16},
-  title: {fontSize: 18, fontWeight: '700', color: '#1F2937'},
+  container: {flex: 1, backgroundColor: colors.surface.bg},
+  header: {flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.surface.surface},
+  backButton: {fontSize: 16, color: colors.brand.brass, marginRight: 16},
+  title: {fontSize: 18, fontWeight: '700', color: colors.text.primary},
   list: {padding: 16},
   recordItem: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
   },
-  recordType: {fontSize: 14, fontWeight: '600', color: '#1F2937'},
-  recordDetail: {fontSize: 13, color: '#6B7280', marginTop: 4},
-  recordDate: {fontSize: 12, color: '#9CA3AF', marginTop: 4},
+  recordType: {fontSize: 14, fontWeight: '600', color: colors.text.primary},
+  recordDetail: {fontSize: 13, color: colors.text.dim, marginTop: 4},
+  recordDate: {fontSize: 12, color: colors.text.mute, marginTop: 4},
   empty: {alignItems: 'center', paddingTop: 80},
-  emptyText: {fontSize: 16, color: '#9CA3AF'},
+  emptyText: {fontSize: 16, color: colors.text.mute},
 });

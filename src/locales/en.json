@@ -51,6 +51,8 @@
     "applying": "Applying for credential...",
     "addSuccess": "Credential added successfully",
     "addFailed": "Failed to add credential",
+    "viewCard": "View card",
+    "autoOpenHint": "Opening card in {{seconds}}s",
     "status": {
       "unverified": "Unverified",
       "verified": "Verified",
@@ -62,7 +64,9 @@
     "content": "Credential Content",
     "issuer": "Issuer",
     "issuedAt": "Issued Date",
-    "expiresAt": "Expiry Date"
+    "expiresAt": "Expiry Date",
+    "tabContent": "Content",
+    "tabMetadata": "Metadata"
   },
   "presentation": {
     "title": "Verifiable Presentation",
@@ -99,6 +103,12 @@
     "hint": "Place QR code inside the frame",
     "permissionDenied": "Camera permission is required to scan QR codes",
     "unsupportedQr": "Unrecognized QR code format"
+  },
+  "tabs": {
+    "credentials": "Cards",
+    "add": "Add",
+    "present": "Present",
+    "settings": "Settings"
   },
   "operations": {
     "title": "Operation Log",

@@ -1,5 +1,6 @@
 import type {JWK} from '../crypto/jwt';
-import {jwkToMultibase} from '../../utils/multicodec';
+import {jwkToTwdiwMultibase, jwkToW3cMultibase} from '../../utils/multicodec';
+import type {DidFormat} from './didFormat';
 
 export interface DIDDocument {
   '@context': string[];
@@ -15,7 +16,10 @@ interface VerificationMethod {
 }
 
 export function generateDIDDocument(publicKeyJwk: JWK): DIDDocument {
-  const multibase = jwkToMultibase({x: publicKeyJwk.x, y: publicKeyJwk.y});
+  // Wallet's stored identity uses TWDIW format — this is what gets persisted
+  // in the local DB and shown to the user. Per-protocol DIDs are derived
+  // on demand via deriveDid() based on a format detected from the QR.
+  const multibase = jwkToTwdiwMultibase({x: publicKeyJwk.x, y: publicKeyJwk.y});
   const didId = `did:key:${multibase}`;
 
   return {
@@ -33,6 +37,20 @@ export function generateDIDDocument(publicKeyJwk: JWK): DIDDocument {
       },
     ],
   };
+}
+
+export function deriveDid(
+  jwk: JWK,
+  format: DidFormat,
+): {did: string; didUrl: string} {
+  const multibase =
+    format === 'twdiw'
+      ? jwkToTwdiwMultibase({x: jwk.x, y: jwk.y})
+      : jwkToW3cMultibase({x: jwk.x, y: jwk.y});
+  const did = `did:key:${multibase}`;
+  const didUrl = `${did}#${multibase}`;
+  console.log('[DID] derive format=', format, 'did.len=', did.length);
+  return {did, didUrl};
 }
 
 export function getDIDId(didDocument: DIDDocument): string {
