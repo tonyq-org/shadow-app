@@ -83,12 +83,10 @@ export default function LoginScreen({navigation}: Props) {
       <View style={styles.content}>
         <Text style={styles.stepLabel}>UNLOCK · WALLET</Text>
         <Text style={styles.title}>
-          歡迎回來{'\n'}
+          {t('auth.welcomeBack')}{'\n'}
           <Text style={styles.titleDim}>{selectedWallet.name}</Text>
         </Text>
-        <Text style={styles.body}>
-          請輸入 PIN 碼以解鎖並重新挂載您的硬體加密金鑰。
-        </Text>
+        <Text style={styles.body}>{t('auth.unlockHint')}</Text>
 
         <View style={styles.walletCard}>
           <View style={styles.avatar}>
@@ -102,7 +100,7 @@ export default function LoginScreen({navigation}: Props) {
             <TouchableOpacity
               onPress={() => setSelectedWalletIndex((selectedWalletIndex + 1) % wallets.length)}
               activeOpacity={0.6}>
-              <Text style={styles.switchLink}>切換 →</Text>
+              <Text style={styles.switchLink}>{t('auth.switchWallet')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>

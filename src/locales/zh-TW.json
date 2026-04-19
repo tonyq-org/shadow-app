@@ -34,19 +34,33 @@
     "useBiometric": "使用生物辨識登入",
     "loginFailed": "登入失敗",
     "wrongPinCode": "PIN 碼錯誤",
-    "verifyingPin": "加密驗算中..."
+    "verifyingPin": "加密驗算中...",
+    "welcomeBack": "歡迎回來",
+    "unlockHint": "請輸入 PIN 碼以解鎖並重新掛載您的硬體加密金鑰。",
+    "switchWallet": "切換 →",
+    "setPinTitle": "設定您的\n六位數 PIN 碼",
+    "confirmPinTitle": "再次輸入\n以確認 PIN 碼",
+    "setPinBody": "PIN 碼將透過 PBKDF2 於硬體安全模組推導加密金鑰，永不離開本機。",
+    "confirmPinBody": "請重複輸入剛才設定的 PIN 碼，以避免輸入錯誤。",
+    "biometricEnableFailed": "啟用生物辨識失敗"
   },
   "home": {
     "title": "我的憑證",
     "noCredentials": "尚無憑證",
     "noCredentialsHint": "掃描 QR Code 新增您的第一張憑證",
     "selectWallet": "選擇皮夾",
-    "cardRecord": "使用紀錄"
+    "cardRecord": "使用紀錄",
+    "issuersLine_one": "由 {{count}} 個發行者簽發",
+    "issuersLine_other": "由 {{count}} 個發行者簽發"
   },
   "credential": {
     "add": "新增憑證",
     "scanQR": "掃描 QR Code",
+    "scanQRDesc": "掃描 QR Code 新增憑證",
     "search": "搜尋憑證",
+    "searchDesc": "搜尋可用的數位憑證",
+    "notFound": "找不到憑證",
+    "deleteConfirm": "確定刪除此憑證？",
     "enterOTP": "請輸入驗證碼",
     "applying": "正在申請憑證...",
     "addSuccess": "憑證新增成功",

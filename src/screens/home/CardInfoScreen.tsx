@@ -78,14 +78,14 @@ export default function CardInfoScreen({navigation, route}: Props) {
           <BackBtn onPress={() => navigation.goBack()} />
         </View>
         <View style={styles.missing}>
-          <Text style={styles.missingText}>Credential not found</Text>
+          <Text style={styles.missingText}>{t('credential.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   const onDelete = () => {
-    Alert.alert(t('credential.detail'), t('credential.deleteConfirm', {defaultValue: '確定刪除此憑證？'}), [
+    Alert.alert(t('credential.detail'), t('credential.deleteConfirm'), [
       {text: t('common.cancel'), style: 'cancel'},
       {
         text: t('common.delete'),

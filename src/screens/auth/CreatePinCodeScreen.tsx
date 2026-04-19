@@ -58,11 +58,8 @@ export default function CreatePinCodeScreen({navigation, route}: Props) {
   };
 
   const stepLabel = step === 'set' ? 'STEP · 02 · OF · 03' : 'STEP · 03 · OF · 03';
-  const title = step === 'set' ? '設定您的\n六位數 PIN 碼' : '再次輸入\n以確認 PIN 碼';
-  const body =
-    step === 'set'
-      ? 'PIN 碼將透過 PBKDF2 於硬體安全模組推導加密金鑰，永不離開本機。'
-      : '請重複輸入剛才設定的 PIN 碼，以避免輸入錯誤。';
+  const title = step === 'set' ? t('auth.setPinTitle') : t('auth.confirmPinTitle');
+  const body = step === 'set' ? t('auth.setPinBody') : t('auth.confirmPinBody');
 
   return (
     <SafeAreaView style={styles.container}>

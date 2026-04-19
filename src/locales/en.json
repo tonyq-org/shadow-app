@@ -34,19 +34,33 @@
     "useBiometric": "Use biometric login",
     "loginFailed": "Login Failed",
     "wrongPinCode": "Incorrect PIN code",
-    "verifyingPin": "Verifying..."
+    "verifyingPin": "Verifying...",
+    "welcomeBack": "Welcome back",
+    "unlockHint": "Enter your PIN to unlock and remount your hardware-protected keys.",
+    "switchWallet": "Switch →",
+    "setPinTitle": "Set your\n6-digit PIN",
+    "confirmPinTitle": "Re-enter\nto confirm",
+    "setPinBody": "Your PIN derives an encryption key via PBKDF2 inside the hardware secure module. It never leaves the device.",
+    "confirmPinBody": "Please re-enter the PIN you just set to confirm it was typed correctly.",
+    "biometricEnableFailed": "Failed to enable biometric login"
   },
   "home": {
     "title": "My Credentials",
     "noCredentials": "No credentials yet",
     "noCredentialsHint": "Scan a QR code to add your first credential",
     "selectWallet": "Select Wallet",
-    "cardRecord": "Usage Records"
+    "cardRecord": "Usage Records",
+    "issuersLine_one": "Issued by {{count}} issuer",
+    "issuersLine_other": "Issued by {{count}} issuers"
   },
   "credential": {
     "add": "Add Credential",
     "scanQR": "Scan QR Code",
+    "scanQRDesc": "Scan a QR code to add a credential",
     "search": "Search Credentials",
+    "searchDesc": "Browse available digital credentials",
+    "notFound": "Credential not found",
+    "deleteConfirm": "Delete this credential?",
     "enterOTP": "Enter verification code",
     "applying": "Applying for credential...",
     "addSuccess": "Credential added successfully",

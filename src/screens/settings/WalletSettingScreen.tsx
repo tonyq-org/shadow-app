@@ -82,7 +82,7 @@ export default function WalletSettingScreen({navigation}: Props) {
         walletDao.updateBiometricEnabled(currentWallet.id, true);
         updateWallet(currentWallet.id, {biometricEnabled: true});
       } else {
-        Alert.alert(t('common.error'), '啟用生物辨識失敗');
+        Alert.alert(t('common.error'), t('auth.biometricEnableFailed'));
       }
       setAskingPin(false);
     } finally {

@@ -68,7 +68,7 @@ export default function CardOverviewScreen({navigation}: Props) {
             </View>
             {count > 0 ? (
               <Text style={styles.subtitle}>
-                {t('home.issuersLine', {count: issuers, defaultValue: `由 ${issuers} 個發行者簽發`})}
+                {t('home.issuersLine', {count: issuers})}
               </Text>
             ) : null}
           </View>

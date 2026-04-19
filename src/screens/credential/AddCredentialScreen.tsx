@@ -21,7 +21,7 @@ export default function AddCredentialScreen({navigation}: Props) {
         <Text style={styles.optionIcon}>📷</Text>
         <View style={styles.optionContent}>
           <Text style={styles.optionTitle}>{t('credential.scanQR')}</Text>
-          <Text style={styles.optionDesc}>掃描 QR Code 新增憑證</Text>
+          <Text style={styles.optionDesc}>{t('credential.scanQRDesc')}</Text>
         </View>
       </TouchableOpacity>
 
@@ -31,7 +31,7 @@ export default function AddCredentialScreen({navigation}: Props) {
         <Text style={styles.optionIcon}>🔍</Text>
         <View style={styles.optionContent}>
           <Text style={styles.optionTitle}>{t('credential.search')}</Text>
-          <Text style={styles.optionDesc}>搜尋可用的數位憑證</Text>
+          <Text style={styles.optionDesc}>{t('credential.searchDesc')}</Text>
         </View>
       </TouchableOpacity>
     </SafeAreaView>
