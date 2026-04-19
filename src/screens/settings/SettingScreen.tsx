@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,9 @@ import {useTranslation} from 'react-i18next';
 import type {SettingsStackParamList} from '../../navigation/types';
 import {useAuthStore} from '../../store/authStore';
 import {useWallet} from '../../hooks/useWallet';
+import {useBiometricToggle} from '../../hooks/useBiometricToggle';
+import {isBiometricAvailable} from '../../native/BiometricAuth';
+import PinVerifyModal from '../../components/PinVerifyModal';
 import {colors, type as fonts} from '../../theme/tokens';
 import {IconChevron, IconShield, IconFingerprint, IconLog} from '../../components/icons';
 
@@ -32,6 +35,12 @@ export default function SettingScreen({navigation}: Props) {
   const {t} = useTranslation();
   const logout = useAuthStore(s => s.logout);
   const {currentWallet} = useWallet();
+  const [bioSupported, setBioSupported] = useState(false);
+  const {askingPin, toggle, onPinVerified, cancelPinPrompt} = useBiometricToggle(currentWallet);
+
+  useEffect(() => {
+    isBiometricAvailable().then(setBioSupported);
+  }, []);
 
   const didShort = shortDid(currentWallet?.didDocument ?? null);
   const initial = currentWallet?.name?.slice(0, 1) ?? '·';
@@ -42,15 +51,19 @@ export default function SettingScreen({navigation}: Props) {
       label: t('settings.changePinCode'),
       right: {kind: 'chevron', onPress: () => navigation.navigate('WalletSetting')},
     },
-    {
-      icon: <IconFingerprint size={14} color={colors.text.dim} />,
-      label: t('settings.biometricLogin'),
-      right: {
-        kind: 'toggle',
-        value: currentWallet?.biometricEnabled ?? false,
-        onChange: () => navigation.navigate('WalletSetting'),
-      },
-    },
+    ...(bioSupported
+      ? [
+          {
+            icon: <IconFingerprint size={14} color={colors.text.dim} />,
+            label: t('settings.biometricLogin'),
+            right: {
+              kind: 'toggle' as const,
+              value: currentWallet?.biometricEnabled ?? false,
+              onChange: toggle,
+            },
+          },
+        ]
+      : []),
   ];
 
   const dataRows: Row[] = [
@@ -119,6 +132,16 @@ export default function SettingScreen({navigation}: Props) {
           <Text style={styles.logoutText}>{t('settings.logout')}</Text>
         </TouchableOpacity>
       </ScrollView>
+      {currentWallet ? (
+        <PinVerifyModal
+          visible={askingPin}
+          title={t('auth.verifyPinToEnableBiometric')}
+          pinSalt={currentWallet.pinSalt}
+          pinHash={currentWallet.pinHash}
+          onVerified={onPinVerified}
+          onCancel={cancelPinPrompt}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

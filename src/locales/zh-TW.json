@@ -42,7 +42,14 @@
     "confirmPinTitle": "再次輸入\n以確認 PIN 碼",
     "setPinBody": "PIN 碼將透過 PBKDF2 於硬體安全模組推導加密金鑰，永不離開本機。",
     "confirmPinBody": "請重複輸入剛才設定的 PIN 碼，以避免輸入錯誤。",
-    "biometricEnableFailed": "啟用生物辨識失敗"
+    "biometricEnableFailed": "啟用生物辨識失敗",
+    "biometricPrompt": "驗證使用者",
+    "verifyPinToEnableBiometric": "請輸入 PIN 碼\n以啟用生物辨識",
+    "biometricChangedTitle": "生物辨識已變更",
+    "biometricChangedBody": "偵測到裝置上的生物辨識重新註冊，為安全起見已關閉此皮夾的生物辨識登入，請改用 PIN 碼。",
+    "biometricLocked": "生物辨識暫時被鎖定，請稍後再試或改用 PIN 碼。",
+    "biometricLockedPermanent": "生物辨識已被永久鎖定，請到系統設定重新解鎖後再試。",
+    "biometricUnavailable": "生物辨識目前不可用"
   },
   "home": {
     "title": "我的憑證",
@@ -91,6 +98,8 @@
     "scanQR": "掃描 QR Code",
     "authorize": "授權",
     "changeCard": "更換憑證",
+    "authorizePrompt": "驗證身分以授權出示",
+    "biometricRequired": "需要通過生物辨識才能授權",
     "result": {
       "success": "授權成功",
       "failed": "授權失敗"

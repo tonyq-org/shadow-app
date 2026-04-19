@@ -1,11 +1,11 @@
 import ReactNativeBiometrics, {BiometryTypes} from 'react-native-biometrics';
+import {BiometryErrorCode, mapBiometryError, type BiometryError} from './BiometricErrors';
 
 const rnBiometrics = new ReactNativeBiometrics({allowDeviceCredentials: true});
 
-export interface BiometricResult {
-  success: boolean;
-  error?: string;
-}
+export type BiometricResult =
+  | {success: true}
+  | {success: false; error: BiometryError};
 
 export async function isBiometricAvailable(): Promise<boolean> {
   try {
@@ -36,17 +36,23 @@ export async function getBiometryType(): Promise<string | null> {
 
 export async function authenticateWithBiometric(
   promptMessage: string,
+  cancelButtonText = '取消',
 ): Promise<BiometricResult> {
   try {
     const {success, error} = await rnBiometrics.simplePrompt({
       promptMessage,
-      cancelButtonText: '取消',
+      cancelButtonText,
     });
     if (success) {
       return {success: true};
     }
-    return {success: false, error: error ?? 'Authentication cancelled'};
-  } catch (e: any) {
-    return {success: false, error: e.message ?? String(e)};
+    return {
+      success: false,
+      error: mapBiometryError(error ?? 'UserCancel'),
+    };
+  } catch (e) {
+    return {success: false, error: mapBiometryError(e)};
   }
 }
+
+export {BiometryErrorCode};

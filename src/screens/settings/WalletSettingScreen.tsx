@@ -5,8 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Switch,
-  Alert} from 'react-native';
+  Switch} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
@@ -14,16 +13,12 @@ import type {SettingsStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
 import {useAuthStore} from '../../store/authStore';
 import {useWalletStore} from '../../store/walletStore';
+import {useBiometricToggle} from '../../hooks/useBiometricToggle';
 import CustomAlert from '../../components/CustomAlert';
+import PinVerifyModal from '../../components/PinVerifyModal';
 import {isBiometricAvailable} from '../../native/BiometricAuth';
-import {
-  enableBiometricUnlock,
-  disableBiometricUnlock,
-} from '../../native/BiometricUnlock';
+import {disableBiometricUnlock} from '../../native/BiometricUnlock';
 import * as walletDao from '../../db/walletDao';
-import PinCodeInput from '../../components/PinCodeInput';
-import LoadingOverlay from '../../components/LoadingOverlay';
-import {verifyPinAsync} from '../../utils/pin';
 import {colors, type as fonts} from '../../theme/tokens';
 import {IconChevron, IconShield, IconFingerprint} from '../../components/icons';
 
@@ -32,12 +27,10 @@ type Props = NativeStackScreenProps<SettingsStackParamList, 'WalletSetting'>;
 export default function WalletSettingScreen({navigation}: Props) {
   const {t} = useTranslation();
   const {currentWallet} = useWallet();
-  const updateWallet = useWalletStore(s => s.updateWallet);
   const logout = useAuthStore(s => s.logout);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [bioSupported, setBioSupported] = useState(false);
-  const [askingPin, setAskingPin] = useState(false);
-  const [verifying, setVerifying] = useState(false);
+  const {askingPin, toggle, onPinVerified, cancelPinPrompt} = useBiometricToggle(currentWallet);
 
   useEffect(() => {
     isBiometricAvailable().then(setBioSupported);
@@ -55,64 +48,6 @@ export default function WalletSettingScreen({navigation}: Props) {
     useWalletStore.getState().removeWallet(currentWallet.id);
     logout();
   };
-
-  const handleToggleBiometric = async (value: boolean) => {
-    if (!currentWallet) return;
-    if (value) {
-      setAskingPin(true);
-    } else {
-      await disableBiometricUnlock(currentWallet.id);
-      walletDao.updateBiometricEnabled(currentWallet.id, false);
-      updateWallet(currentWallet.id, {biometricEnabled: false});
-    }
-  };
-
-  const handlePinVerified = async (pin: string) => {
-    if (!currentWallet) return;
-    setVerifying(true);
-    try {
-      const matches = await verifyPinAsync(pin, currentWallet.pinSalt, currentWallet.pinHash);
-      if (!matches) {
-        Alert.alert(t('auth.loginFailed'), t('auth.wrongPinCode'));
-        setAskingPin(false);
-        return;
-      }
-      const ok = await enableBiometricUnlock(currentWallet.id, pin);
-      if (ok) {
-        walletDao.updateBiometricEnabled(currentWallet.id, true);
-        updateWallet(currentWallet.id, {biometricEnabled: true});
-      } else {
-        Alert.alert(t('common.error'), t('auth.biometricEnableFailed'));
-      }
-      setAskingPin(false);
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  if (askingPin) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            activeOpacity={0.7}
-            onPress={() => setAskingPin(false)}>
-            <IconChevron size={18} color={colors.text.primary} direction="left" />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.pinContent}>
-          <Text style={styles.microLabel}>VERIFY · PIN</Text>
-          <Text style={styles.title}>
-            請輸入 PIN 碼{'\n'}以啟用生物辨識
-          </Text>
-          <View style={{height: 32}} />
-          <PinCodeInput length={6} onComplete={handlePinVerified} />
-        </View>
-        <LoadingOverlay visible={verifying} message={t('auth.verifyingPin')} />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -161,7 +96,7 @@ export default function WalletSettingScreen({navigation}: Props) {
                 <Text style={styles.rowLabel}>{t('settings.biometricLogin')}</Text>
                 <Switch
                   value={currentWallet?.biometricEnabled ?? false}
-                  onValueChange={handleToggleBiometric}
+                  onValueChange={toggle}
                   trackColor={{true: colors.brand.brass, false: 'rgba(246,241,227,0.15)'}}
                   thumbColor="#FFFFFF"
                 />
@@ -187,6 +122,17 @@ export default function WalletSettingScreen({navigation}: Props) {
         onCancel={() => setShowDeleteAlert(false)}
         destructive
       />
+
+      {currentWallet ? (
+        <PinVerifyModal
+          visible={askingPin}
+          title={t('auth.verifyPinToEnableBiometric')}
+          pinSalt={currentWallet.pinSalt}
+          pinHash={currentWallet.pinHash}
+          onVerified={onPinVerified}
+          onCancel={cancelPinPrompt}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -282,13 +228,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.status.danger,
     letterSpacing: 0.5,
-  },
-  pinContent: {flex: 1, paddingHorizontal: 28, paddingTop: 20},
-  title: {
-    fontFamily: fonts.serifTC,
-    fontSize: 28,
-    lineHeight: 38,
-    color: colors.text.primary,
-    fontWeight: '700',
   },
 });

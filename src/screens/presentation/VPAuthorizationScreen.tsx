@@ -5,7 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator} from 'react-native';
+  ActivityIndicator,
+  Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
@@ -19,6 +20,8 @@ import {
 import type {DIDDocument} from '../../services/protocol/did';
 import {sdJwtDecode} from '../../services/protocol/sdjwt';
 import {addOperationRecord, addPresentationRecord} from '../../db/recordDao';
+import {isBiometricAvailable, authenticateWithBiometric} from '../../native/BiometricAuth';
+import {BiometryErrorCode} from '../../native/BiometricErrors';
 import {colors, type as fonts} from '../../theme/tokens';
 import CardItem from '../../components/CardItem';
 import {IconClose, IconShield, IconCheck} from '../../components/icons';
@@ -120,6 +123,30 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
 
   const handleAuthorize = async () => {
     if (!request || !currentWallet?.didDocument || !selectedCredential) return;
+    if (currentWallet.biometricEnabled) {
+      const available = await isBiometricAvailable();
+      if (!available) {
+        Alert.alert(t('common.error'), t('auth.biometricUnavailable'));
+        return;
+      }
+      const auth = await authenticateWithBiometric(
+        t('presentation.authorizePrompt'),
+        t('common.cancel'),
+      );
+      if (!auth.success) {
+        if (auth.error.code === BiometryErrorCode.UserCancel) return;
+        if (auth.error.code === BiometryErrorCode.Lockout) {
+          Alert.alert(t('common.error'), t('auth.biometricLocked'));
+          return;
+        }
+        if (auth.error.code === BiometryErrorCode.LockoutPermanent) {
+          Alert.alert(t('common.error'), t('auth.biometricLockedPermanent'));
+          return;
+        }
+        Alert.alert(t('common.error'), t('presentation.biometricRequired'));
+        return;
+      }
+    }
     setAuthorizing(true);
     try {
       const didDocument = JSON.parse(currentWallet.didDocument) as DIDDocument;

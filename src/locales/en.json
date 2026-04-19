@@ -42,7 +42,14 @@
     "confirmPinTitle": "Re-enter\nto confirm",
     "setPinBody": "Your PIN derives an encryption key via PBKDF2 inside the hardware secure module. It never leaves the device.",
     "confirmPinBody": "Please re-enter the PIN you just set to confirm it was typed correctly.",
-    "biometricEnableFailed": "Failed to enable biometric login"
+    "biometricEnableFailed": "Failed to enable biometric login",
+    "biometricPrompt": "Verify it's you",
+    "verifyPinToEnableBiometric": "Enter your PIN\nto enable biometrics",
+    "biometricChangedTitle": "Biometrics Changed",
+    "biometricChangedBody": "A change in this device's biometric enrollment was detected. For your safety, biometric login has been disabled on this wallet. Please sign in with your PIN.",
+    "biometricLocked": "Biometrics are temporarily locked. Please try again later or use your PIN.",
+    "biometricLockedPermanent": "Biometrics are permanently locked. Please re-authenticate in the system settings.",
+    "biometricUnavailable": "Biometrics are currently unavailable"
   },
   "home": {
     "title": "My Credentials",
@@ -91,6 +98,8 @@
     "scanQR": "Scan QR Code",
     "authorize": "Authorize",
     "changeCard": "Change Credential",
+    "authorizePrompt": "Authenticate to authorize this presentation",
+    "biometricRequired": "Biometric authentication required to authorize",
     "result": {
       "success": "Authorization Successful",
       "failed": "Authorization Failed"

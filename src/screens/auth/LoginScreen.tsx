@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,14 @@ import {useTranslation} from 'react-i18next';
 import type {AuthStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
 import {useAuthStore} from '../../store/authStore';
+import {useWalletStore} from '../../store/walletStore';
 import PinCodeInput from '../../components/PinCodeInput';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import {verifyPinAsync} from '../../utils/pin';
 import {isBiometricAvailable} from '../../native/BiometricAuth';
-import {getPinViaBiometric} from '../../native/BiometricUnlock';
+import {verifyBiometric, disableBiometricUnlock} from '../../native/BiometricUnlock';
+import {BiometryErrorCode} from '../../native/BiometricErrors';
+import * as walletDao from '../../db/walletDao';
 import {colors, type as fonts} from '../../theme/tokens';
 import {IconFingerprint} from '../../components/icons';
 
@@ -25,36 +28,58 @@ export default function LoginScreen({navigation}: Props) {
   const {t} = useTranslation();
   const {wallets} = useWallet();
   const login = useAuthStore(s => s.login);
+  const updateWallet = useWalletStore(s => s.updateWallet);
   const [selectedWalletIndex, setSelectedWalletIndex] = useState(0);
   const [biometricReady, setBiometricReady] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const autoTriggeredRef = useRef<string | null>(null);
 
   const selectedWallet = wallets[selectedWalletIndex];
+
+  const handleBiometric = useCallback(async () => {
+    if (!selectedWallet) return;
+    const result = await verifyBiometric(selectedWallet.id, t('auth.biometricPrompt'));
+    if (result.success) {
+      login(selectedWallet.id);
+      return;
+    }
+    const {code} = result.error;
+    if (code === BiometryErrorCode.UserCancel) {
+      return;
+    }
+    if (code === BiometryErrorCode.KeyInvalidated) {
+      await disableBiometricUnlock(selectedWallet.id);
+      walletDao.updateBiometricEnabled(selectedWallet.id, false);
+      updateWallet(selectedWallet.id, {biometricEnabled: false});
+      setBiometricReady(false);
+      Alert.alert(t('auth.biometricChangedTitle'), t('auth.biometricChangedBody'));
+      return;
+    }
+    if (code === BiometryErrorCode.Lockout) {
+      Alert.alert(t('common.error'), t('auth.biometricLocked'));
+      return;
+    }
+    if (code === BiometryErrorCode.LockoutPermanent) {
+      Alert.alert(t('common.error'), t('auth.biometricLockedPermanent'));
+      return;
+    }
+    if (code === BiometryErrorCode.NotAvailable) {
+      Alert.alert(t('common.error'), t('auth.biometricUnavailable'));
+    }
+  }, [selectedWallet, login, updateWallet, t]);
 
   useEffect(() => {
     if (!selectedWallet) return;
     (async () => {
       const available = await isBiometricAvailable();
-      setBiometricReady(available && selectedWallet.biometricEnabled);
-    })();
-  }, [selectedWallet]);
-
-  const handleBiometric = async () => {
-    if (!selectedWallet) return;
-    const pin = await getPinViaBiometric(selectedWallet.id, t('auth.useBiometric'));
-    if (!pin) return;
-    setVerifying(true);
-    try {
-      const ok = await verifyPinAsync(pin, selectedWallet.pinSalt, selectedWallet.pinHash);
-      if (ok) {
-        login(selectedWallet.id);
-      } else {
-        Alert.alert(t('auth.loginFailed'), t('auth.wrongPinCode'));
+      const ready = available && selectedWallet.biometricEnabled;
+      setBiometricReady(ready);
+      if (ready && autoTriggeredRef.current !== selectedWallet.id) {
+        autoTriggeredRef.current = selectedWallet.id;
+        handleBiometric();
       }
-    } finally {
-      setVerifying(false);
-    }
-  };
+    })();
+  }, [selectedWallet, handleBiometric]);
 
   const handlePinComplete = async (value: string) => {
     if (!selectedWallet) return;
