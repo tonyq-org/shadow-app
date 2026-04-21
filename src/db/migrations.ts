@@ -55,6 +55,14 @@ const migrations: Migration[] = [
       )`);
     },
   },
+  {
+    version: 2,
+    up: db => {
+      db.execute(
+        `ALTER TABLE credential ADD COLUMN format TEXT NOT NULL DEFAULT 'sd-jwt-vcdm'`,
+      );
+    },
+  },
 ];
 
 export function runMigrations(db: Database, currentVersion: number): number {

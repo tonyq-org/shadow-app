@@ -2,6 +2,11 @@ import {v4 as uuidv4} from 'uuid';
 import {getDatabase} from './database';
 import type {Credential} from '../store/walletStore';
 import {CredentialStatus} from '../store/walletStore';
+import {
+  DEFAULT_CREDENTIAL_FORMAT,
+  detectCredentialFormat,
+  type CredentialFormat,
+} from '../services/protocol/credentialFormat';
 
 export function saveCredential(
   walletId: string,
@@ -13,18 +18,21 @@ export function saveCredential(
   displayImage?: string,
   issuedAt?: number,
   expiresAt?: number,
+  format?: CredentialFormat,
 ): Credential {
   const db = getDatabase();
   const id = uuidv4();
   const now = Date.now();
+  const resolvedFormat = format ?? detectCredentialFormat(rawJwt);
 
   db.execute(
     `INSERT INTO credential
-     (id, wallet_id, raw_jwt, issuer_did, issuer_name, credential_type,
+     (id, wallet_id, raw_jwt, format, issuer_did, issuer_name, credential_type,
       display_name, display_image, status, issued_at, expires_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      id, walletId, rawJwt, issuerDid ?? null, issuerName ?? null,
+      id, walletId, rawJwt, resolvedFormat,
+      issuerDid ?? null, issuerName ?? null,
       credentialType ?? null, displayName ?? null, displayImage ?? null,
       CredentialStatus.Unverified, issuedAt ?? null, expiresAt ?? null, now,
     ],
@@ -34,6 +42,7 @@ export function saveCredential(
     id,
     walletId,
     rawJwt,
+    format: resolvedFormat,
     issuerDid: issuerDid ?? null,
     issuerName: issuerName ?? null,
     credentialType: credentialType ?? null,
@@ -79,6 +88,7 @@ function mapRowToCredential(row: Record<string, unknown>): Credential {
     id: row.id as string,
     walletId: row.wallet_id as string,
     rawJwt: row.raw_jwt as string,
+    format: (row.format as CredentialFormat) ?? DEFAULT_CREDENTIAL_FORMAT,
     issuerDid: row.issuer_did as string | null,
     issuerName: row.issuer_name as string | null,
     credentialType: row.credential_type as string | null,

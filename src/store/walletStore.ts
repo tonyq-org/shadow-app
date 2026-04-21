@@ -1,4 +1,5 @@
 import {create} from 'zustand';
+import type {CredentialFormat} from '../services/protocol/credentialFormat';
 
 export interface Wallet {
   id: string;
@@ -16,6 +17,7 @@ export interface Credential {
   id: string;
   walletId: string;
   rawJwt: string;
+  format: CredentialFormat;
   issuerDid: string | null;
   issuerName: string | null;
   credentialType: string | null;
