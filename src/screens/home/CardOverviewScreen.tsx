@@ -10,6 +10,7 @@ import CardItem from '../../components/CardItem';
 import TopChrome from '../../components/TopChrome';
 import {colors, type as fonts} from '../../theme/tokens';
 import {extractCardDisplay} from '../../utils/credentialDisplay';
+import {refreshIssuerTrustList} from '../../services/trust/issuerTrustList';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CardOverview'>;
 
@@ -23,6 +24,10 @@ export default function CardOverviewScreen({navigation}: Props) {
       loadCredentials(currentWallet.id);
     }
   }, [currentWallet, loadCredentials]);
+
+  useEffect(() => {
+    refreshIssuerTrustList().catch(() => {});
+  }, []);
 
   const count = currentCredentials.length;
   const issuers = new Set(

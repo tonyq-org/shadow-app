@@ -63,6 +63,22 @@ const migrations: Migration[] = [
       );
     },
   },
+  {
+    version: 3,
+    up: db => {
+      db.execute(`CREATE TABLE IF NOT EXISTS issuer_trust (
+        did TEXT PRIMARY KEY,
+        org_json TEXT NOT NULL,
+        status INTEGER NOT NULL DEFAULT 1,
+        updated_at INTEGER,
+        fetched_at INTEGER NOT NULL
+      )`);
+      db.execute(`CREATE TABLE IF NOT EXISTS kv_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      )`);
+    },
+  },
 ];
 
 export function runMigrations(db: Database, currentVersion: number): number {
