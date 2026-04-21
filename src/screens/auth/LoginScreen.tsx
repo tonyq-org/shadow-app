@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {useFocusEffect} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import type {AuthStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
@@ -68,18 +69,29 @@ export default function LoginScreen({navigation}: Props) {
     }
   }, [selectedWallet, login, updateWallet, t]);
 
-  useEffect(() => {
-    if (!selectedWallet) return;
-    (async () => {
-      const available = await isBiometricAvailable();
-      const ready = available && selectedWallet.biometricEnabled;
-      setBiometricReady(ready);
-      if (ready && autoTriggeredRef.current !== selectedWallet.id) {
-        autoTriggeredRef.current = selectedWallet.id;
-        handleBiometric();
-      }
-    })();
-  }, [selectedWallet, handleBiometric]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!selectedWallet) return;
+      let cancelled = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      (async () => {
+        const available = await isBiometricAvailable();
+        if (cancelled) return;
+        const ready = available && selectedWallet.biometricEnabled;
+        setBiometricReady(ready);
+        if (ready && autoTriggeredRef.current !== selectedWallet.id) {
+          autoTriggeredRef.current = selectedWallet.id;
+          timer = setTimeout(() => {
+            if (!cancelled) handleBiometric();
+          }, 350);
+        }
+      })();
+      return () => {
+        cancelled = true;
+        if (timer) clearTimeout(timer);
+      };
+    }, [selectedWallet, handleBiometric]),
+  );
 
   const handlePinComplete = async (value: string) => {
     if (!selectedWallet) return;
