@@ -87,7 +87,16 @@
     "issuedAt": "Issued Date",
     "expiresAt": "Expiry Date",
     "tabContent": "Content",
-    "tabMetadata": "Metadata"
+    "tabMetadata": "Metadata",
+    "catalog": {
+      "title": "Issuer Catalog",
+      "entryDesc": "Browse credentials available from official partner issuers",
+      "hint": "Pick an issuer to open its application page; the app will handle the credential offer automatically when you finish.",
+      "empty": "No credentials are currently available.",
+      "loadFailed": "Could not load the issuer catalog. Please try again later.",
+      "webviewTitle": "Issuer Web",
+      "webviewLoadFailed": "Failed to load page"
+    }
   },
   "presentation": {
     "title": "Verifiable Presentation",
@@ -103,6 +112,23 @@
     "result": {
       "success": "Authorization Successful",
       "failed": "Authorization Failed"
+    },
+    "errors": {
+      "sessionNotFound": "This QR code has expired. Please ask the verifier to generate a new one and rescan.",
+      "network": "Network unreachable. Check your connection and try again.",
+      "httpError": "The verifier could not process this request. Please try again later.",
+      "malformedQr": "This QR code is not a valid verifier request.",
+      "unsupportedQuery": "This verifier uses a DCQL query (OpenID4VP 1.0), which is not yet supported.",
+      "scenarioListFailed": "Could not load presentation scenarios. Please try again later.",
+      "startTransactionFailed": "Could not start the presentation transaction. Please try again later."
+    },
+    "scenarioListHint": "Pick a presentation scenario, or scan a verifier QR code.",
+    "noScenarios": "No presentation scenarios are currently available.",
+    "barcode": {
+      "title": "Presentation Barcode",
+      "showToStaff": "Show this barcode to the verifier to scan",
+      "expiresIn": "Expires in {{seconds}}s",
+      "expired": "Barcode expired"
     }
   },
   "settings": {
@@ -125,7 +151,8 @@
     "title": "Scan QR Code",
     "hint": "Place QR code inside the frame",
     "permissionDenied": "Camera permission is required to scan QR codes",
-    "unsupportedQr": "Unrecognized QR code format"
+    "unsupportedQr": "Unrecognized QR code format",
+    "scanAgain": "Scan Again"
   },
   "tabs": {
     "credentials": "Cards",
@@ -140,6 +167,7 @@
     "remove": "Remove credential",
     "verify": "Verify",
     "present": "Present",
+    "presentFailed": "Present failed",
     "login": "Login",
     "changePassword": "Change password",
     "expired": "Expired"

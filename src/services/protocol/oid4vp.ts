@@ -8,6 +8,31 @@ import {detectDidFormatFromQr, type DidFormat} from './didFormat';
 import {sdJwtEncode} from './sdjwt';
 import {extractQueryParam, unwrapQr} from './qr';
 
+export type VPErrorKind =
+  | 'sessionNotFound'
+  | 'network'
+  | 'httpError'
+  | 'malformedQr'
+  | 'unsupportedQuery';
+
+export class VPRequestError extends Error {
+  kind: VPErrorKind;
+  status?: number;
+  backendCode?: string | number;
+  backendMessage?: string;
+  constructor(
+    kind: VPErrorKind,
+    message: string,
+    extra?: {status?: number; backendCode?: string | number; backendMessage?: string},
+  ) {
+    super(message);
+    this.kind = kind;
+    this.status = extra?.status;
+    this.backendCode = extra?.backendCode;
+    this.backendMessage = extra?.backendMessage;
+  }
+}
+
 export interface PresentationRequest {
   clientId: string;
   nonce: string;
@@ -52,10 +77,70 @@ export interface VPResult {
 }
 
 /**
+ * Quick shape check for a VP authorize QR. Accepts wrapped TWDIW URLs,
+ * raw `modadigitalwallet://authorize?...`, and any URI carrying `request_uri`.
+ */
+export function isVPAuthorizeQr(qrCode: string): boolean {
+  const q = unwrapQr(qrCode);
+  if (q.startsWith('modadigitalwallet://authorize')) return true;
+  if (extractQueryParam(q, 'request_uri')) return true;
+  return false;
+}
+
+/**
+ * Dedupes concurrent parseVPRequest calls AND caches successful results.
+ * The request_uri JWT is one-shot — a second GET after the first success
+ * returns 400 "session consumed". We cache the parsed PresentationRequest
+ * so re-mounts or navigate-back into VPAuth reuse it instead of re-fetching.
+ */
+const parseInFlight = new Map<string, Promise<PresentationRequest>>();
+const parseCache = new Map<string, PresentationRequest>();
+const rejectedQrs = new Map<string, VPErrorKind>();
+
+/** Returns the cached rejection kind if this qrCode has already been rejected. */
+export function getKnownVPRejection(qrCode: string): VPErrorKind | undefined {
+  return rejectedQrs.get(qrCode);
+}
+
+/**
  * OID4VP-202i: Parse VP request from QR code
  * Ported from APPSDK/lib/openid_vc_vp.dart parseVPQrcode()
  */
 export async function parseVPRequest(
+  qrCode: string,
+): Promise<PresentationRequest> {
+  const cached = parseCache.get(qrCode);
+  if (cached) return cached;
+  const existing = parseInFlight.get(qrCode);
+  if (existing) return existing;
+  const promise = doParseVPRequest(qrCode)
+    .then(result => {
+      parseCache.set(qrCode, result);
+      return result;
+    })
+    .catch(err => {
+      if (
+        err instanceof VPRequestError &&
+        (err.kind === 'sessionNotFound' || err.kind === 'unsupportedQuery')
+      ) {
+        rejectedQrs.set(qrCode, err.kind);
+      }
+      throw err;
+    })
+    .finally(() => {
+      parseInFlight.delete(qrCode);
+    });
+  parseInFlight.set(qrCode, promise);
+  return promise;
+}
+
+/** Called by generateVP after a successful submission so the QR can't be replayed. */
+export function clearVPRequestCache(qrCode: string): void {
+  parseCache.delete(qrCode);
+  parseInFlight.delete(qrCode);
+}
+
+async function doParseVPRequest(
   qrCode: string,
 ): Promise<PresentationRequest> {
   const didFormat = detectDidFormatFromQr(qrCode);
@@ -64,15 +149,39 @@ export async function parseVPRequest(
   const requestUri = extractQueryParam(q, 'request_uri');
 
   if (!requestUri) {
-    throw new Error('Missing request_uri in QR code');
+    throw new VPRequestError('malformedQr', 'Missing request_uri in QR code');
   }
 
-  const response = await httpClient.get(requestUri);
+  console.log('[VP.parse] requestUri=', requestUri);
+  let response;
+  try {
+    response = await httpClient.get(requestUri);
+  } catch (e: any) {
+    throw classifyHttpError(e, 'GET request_uri', {treat4xxAsExpired: true});
+  }
   const requestToken = response.data;
 
   const {payload} = jwtDecode(
     typeof requestToken === 'string' ? requestToken : requestToken.toString(),
   );
+
+  const pd = payload.presentation_definition as Record<string, unknown> | undefined;
+  const dcql = (payload as any).dcql_query;
+  console.log(
+    '[VP.parse] hasPresentationDefinition=',
+    !!pd,
+    'hasDcqlQuery=',
+    !!dcql,
+    'client_id=',
+    payload.client_id,
+  );
+
+  if (!pd && dcql) {
+    throw new VPRequestError(
+      'unsupportedQuery',
+      'Verifier uses DCQL query (OpenID4VP 1.0) which is not yet supported',
+    );
+  }
 
   return {
     clientId: (payload.client_id as string) ?? '',
@@ -180,6 +289,9 @@ export async function generateVP(
       params.set('custom_data', customData);
     }
 
+    console.log('[VP.post] uri=', request.responseUri);
+    console.log('[VP.post] state=', request.state, 'nonce=', request.nonce);
+    console.log('[VP.post] submission=', presentationSubmission);
     const response = await httpClient.post(
       request.responseUri,
       params.toString(),
@@ -192,9 +304,65 @@ export async function generateVP(
       data: response.data,
     };
   } catch (error: any) {
-    return {
-      code: '1',
-      message: error.message ?? 'Failed to generate VP',
-    };
+    if (error instanceof VPRequestError) throw error;
+    throw classifyHttpError(error, 'POST response_uri');
   }
+}
+
+function classifyHttpError(
+  e: any,
+  label: string,
+  opts?: {treat4xxAsExpired?: boolean},
+): VPRequestError {
+  const status = e?.response?.status;
+  const body = e?.response?.data;
+  const backendCode = extractBackendCode(body);
+  const backendMessage = extractBackendMessage(body);
+  const bodyStr =
+    typeof body === 'object' ? JSON.stringify(body) : String(body ?? '');
+  console.log(`[VP.${label}.err] status=`, status, 'body=', bodyStr);
+
+  if (status === undefined) {
+    return new VPRequestError('network', e?.message ?? `${label} network error`);
+  }
+
+  const is4xxExpired =
+    !!opts?.treat4xxAsExpired && status >= 400 && status < 500;
+  const isSessionMissing =
+    backendCode === 4002 ||
+    backendCode === '4002' ||
+    (status === 404 && /session/i.test(backendMessage ?? '')) ||
+    /request session is not exist/i.test(bodyStr) ||
+    is4xxExpired;
+
+  if (isSessionMissing) {
+    return new VPRequestError(
+      'sessionNotFound',
+      backendMessage ?? 'Request session expired',
+      {status, backendCode: backendCode ?? undefined, backendMessage},
+    );
+  }
+
+  const detail = `HTTP ${status}${bodyStr ? `: ${bodyStr.slice(0, 300)}` : ''}`;
+  return new VPRequestError('httpError', detail, {
+    status,
+    backendCode: backendCode ?? undefined,
+    backendMessage,
+  });
+}
+
+function extractBackendCode(body: unknown): string | number | undefined {
+  if (body && typeof body === 'object' && 'code' in (body as any)) {
+    const c = (body as any).code;
+    if (typeof c === 'string' || typeof c === 'number') return c;
+  }
+  return undefined;
+}
+
+function extractBackendMessage(body: unknown): string | undefined {
+  if (body && typeof body === 'object' && 'message' in (body as any)) {
+    const m = (body as any).message;
+    if (typeof m === 'string') return m;
+  }
+  return undefined;
 }

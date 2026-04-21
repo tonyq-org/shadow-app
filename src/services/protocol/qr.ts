@@ -19,7 +19,8 @@ export function unwrapQr(qrCode: string): string {
     const url = new URL(trimmed);
     const host = url.hostname.toLowerCase();
     const isTwdiwWrapper =
-      /(^|\.)wallet\.gov\.tw$/.test(host) && url.pathname.includes('/vcqrcode');
+      /(^|\.)wallet\.gov\.tw$/.test(host) &&
+      /\/(vc|vp)qrcode(\/|$)/.test(url.pathname);
     if (!isTwdiwWrapper) return trimmed;
     const deeplink = url.searchParams.get('deeplink');
     if (!deeplink) return trimmed;

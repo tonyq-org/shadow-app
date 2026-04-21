@@ -87,7 +87,16 @@
     "issuedAt": "發行日期",
     "expiresAt": "到期日期",
     "tabContent": "內容",
-    "tabMetadata": "詮釋資料"
+    "tabMetadata": "詮釋資料",
+    "catalog": {
+      "title": "發行者目錄",
+      "entryDesc": "瀏覽官方合作發行者的可申請憑證",
+      "hint": "選擇發行者開啟申請網頁，完成後會自動回到 App 新增憑證。",
+      "empty": "目前沒有可申請的憑證。",
+      "loadFailed": "無法取得憑證目錄，請稍後再試。",
+      "webviewTitle": "發行者網頁",
+      "webviewLoadFailed": "網頁載入失敗"
+    }
   },
   "presentation": {
     "title": "授權出示",
@@ -103,6 +112,23 @@
     "result": {
       "success": "授權成功",
       "failed": "授權失敗"
+    },
+    "errors": {
+      "sessionNotFound": "此 QR Code 已失效,請向驗證方重新產生後再掃描。",
+      "network": "網路無法連線,請確認網路後再試。",
+      "httpError": "驗證方目前無法處理此請求,請稍後再試。",
+      "malformedQr": "此 QR Code 不是有效的驗證請求。",
+      "unsupportedQuery": "此驗證方使用 DCQL 查詢（OpenID4VP 1.0），目前尚未支援。",
+      "scenarioListFailed": "無法取得出示情境清單，請稍後再試。",
+      "startTransactionFailed": "無法建立出示交易，請稍後再試。"
+    },
+    "scenarioListHint": "選擇要出示給驗證方的情境，或掃描驗證方 QR Code。",
+    "noScenarios": "目前沒有可用的出示情境。",
+    "barcode": {
+      "title": "出示條碼",
+      "showToStaff": "請將此條碼提供給驗證方掃描",
+      "expiresIn": "{{seconds}} 秒後失效",
+      "expired": "條碼已失效"
     }
   },
   "settings": {
@@ -125,7 +151,8 @@
     "title": "掃描 QR Code",
     "hint": "將 QR Code 放入框內",
     "permissionDenied": "需要相機權限才能掃描 QR Code",
-    "unsupportedQr": "無法辨識的 QR Code 格式"
+    "unsupportedQr": "無法辨識的 QR Code 格式",
+    "scanAgain": "重新掃描"
   },
   "tabs": {
     "credentials": "憑證",
@@ -140,6 +167,7 @@
     "remove": "刪除憑證",
     "verify": "驗證",
     "present": "出示",
+    "presentFailed": "出示失敗",
     "login": "登入",
     "changePassword": "變更密碼",
     "expired": "已過期"

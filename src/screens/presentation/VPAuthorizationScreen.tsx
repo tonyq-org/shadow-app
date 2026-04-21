@@ -15,7 +15,10 @@ import {useWallet} from '../../hooks/useWallet';
 import {
   parseVPRequest,
   generateVP,
+  clearVPRequestCache,
+  VPRequestError,
   type PresentationRequest,
+  type VPErrorKind,
 } from '../../services/protocol/oid4vp';
 import {
   findMatchingCredential,
@@ -40,11 +43,14 @@ interface FieldRow {
 
 export default function VPAuthorizationScreen({navigation, route}: Props) {
   const {t} = useTranslation();
-  const {qrData, selectedCredentialId} = route.params;
+  const {qrData, selectedCredentialId, offline} = route.params;
   const {currentWallet, currentCredentials} = useWallet();
 
   const [request, setRequest] = useState<PresentationRequest | null>(null);
-  const [parseError, setParseError] = useState<string | null>(null);
+  const [parseError, setParseError] = useState<{
+    kind?: VPErrorKind;
+    message: string;
+  } | null>(null);
   const [authorizing, setAuthorizing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | undefined>(selectedCredentialId);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
@@ -56,7 +62,14 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
         const parsed = await parseVPRequest(qrData);
         if (!cancelled) setRequest(parsed);
       } catch (err: unknown) {
-        if (!cancelled) setParseError(err instanceof Error ? err.message : String(err));
+        if (cancelled) return;
+        if (err instanceof VPRequestError) {
+          setParseError({kind: err.kind, message: err.message});
+        } else {
+          setParseError({
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
       }
     })();
     return () => {
@@ -75,6 +88,7 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
       const match = findMatchingCredential(desc, currentCredentials);
       if (match) return match.id;
     }
+    if (currentCredentials.length >= 1) return currentCredentials[0].id;
     return undefined;
   }, [selectedId, request, currentCredentials]);
 
@@ -165,24 +179,54 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
         'present',
         request.verifierDid ?? request.clientId ?? undefined,
       );
+      if (success) clearVPRequestCache(qrData);
+      if (success && offline) {
+        navigation.replace('OfflineBarcode', {
+          verifierModuleUrl: offline.verifierModuleUrl,
+          transactionId: offline.transactionId,
+        });
+        return;
+      }
       navigation.replace('VPResult', {success, message: result.message});
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (currentWallet) addOperationRecord(currentWallet.id, 'present', message);
-      navigation.replace('VPResult', {success: false, message});
+      const friendly =
+        err instanceof VPRequestError
+          ? t(`presentation.errors.${err.kind}`)
+          : err instanceof Error
+            ? err.message
+            : String(err);
+      const logDetail = err instanceof Error ? err.message : String(err);
+      if (currentWallet) addOperationRecord(currentWallet.id, 'present', logDetail);
+      navigation.replace('VPResult', {success: false, message: friendly});
     } finally {
       setAuthorizing(false);
     }
   };
 
   if (parseError) {
+    const friendly = parseError.kind
+      ? t(`presentation.errors.${parseError.kind}`)
+      : parseError.message;
+    const rescan = () => {
+      if (navigation.canGoBack()) navigation.goBack();
+      navigation.getParent()?.navigate('CredentialTab', {screen: 'ScanQR'});
+    };
+    const dismiss = () => {
+      if (navigation.canGoBack()) navigation.goBack();
+      else navigation.getParent()?.navigate('HomeTab');
+    };
     return (
       <SafeAreaView style={styles.container}>
-        <HeaderClose onPress={() => navigation.goBack()} />
+        <HeaderClose onPress={dismiss} />
         <View style={styles.center}>
-          <Text style={styles.errorText}>{parseError}</Text>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>{t('common.back')}</Text>
+          <Text style={styles.errorText}>{friendly}</Text>
+          <TouchableOpacity style={styles.primaryBtnInline} onPress={rescan}>
+            <Text style={styles.primaryBtnInlineText}>
+              {t('scan.scanAgain')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.backBtn} onPress={dismiss}>
+            <Text style={styles.backBtnText}>{t('common.close')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -242,6 +286,7 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
                 navigation.navigate('ChangeCard', {
                   qrData,
                   currentCardId: autoSelectedId,
+                  offline,
                 })
               }>
               <Text style={styles.changeLink}>更換 →</Text>
@@ -542,6 +587,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text.dim,
     marginTop: 14,
+  },
+  primaryBtnInline: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: colors.brand.brass,
+    marginBottom: 12,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  primaryBtnInlineText: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 14,
+    color: colors.brand.ink,
+    fontWeight: '700',
   },
   backBtn: {
     paddingHorizontal: 20,

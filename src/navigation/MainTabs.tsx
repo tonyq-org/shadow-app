@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet, Pressable} from 'react-native';
 import {createBottomTabNavigator, type BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -12,6 +12,8 @@ import type {
 } from './types';
 import {colors, type as fonts} from '../theme/tokens';
 import {IconCard, IconPlus, IconSend, IconSettings, IconScan} from '../components/icons';
+import {useAuthStore} from '../store/authStore';
+import {useWallet} from '../hooks/useWallet';
 
 import CardOverviewScreen from '../screens/home/CardOverviewScreen';
 import CardInfoScreen from '../screens/home/CardInfoScreen';
@@ -20,11 +22,14 @@ import AddCredentialScreen from '../screens/credential/AddCredentialScreen';
 import ScanQRScreen from '../screens/credential/ScanQRScreen';
 import SearchCredentialScreen from '../screens/credential/SearchCredentialScreen';
 import AddResultScreen from '../screens/credential/AddResultScreen';
+import IssuerCatalogScreen from '../screens/credential/IssuerCatalogScreen';
+import IssuerWebViewScreen from '../screens/credential/IssuerWebViewScreen';
 import ShowCredentialsScreen from '../screens/credential/ShowCredentialsScreen';
 import PresentationHomeScreen from '../screens/presentation/PresentationHomeScreen';
 import VPAuthorizationScreen from '../screens/presentation/VPAuthorizationScreen';
 import ChangeCardScreen from '../screens/presentation/ChangeCardScreen';
 import VPResultScreen from '../screens/presentation/VPResultScreen';
+import OfflineBarcodeScreen from '../screens/presentation/OfflineBarcodeScreen';
 import SettingScreen from '../screens/settings/SettingScreen';
 import WalletSettingScreen from '../screens/settings/WalletSettingScreen';
 import OperationLogScreen from '../screens/settings/OperationLogScreen';
@@ -48,6 +53,8 @@ function CredentialStackScreen() {
       <CredentialStack.Screen name="ScanQR" component={ScanQRScreen} />
       <CredentialStack.Screen name="SearchCredential" component={SearchCredentialScreen} />
       <CredentialStack.Screen name="AddResult" component={AddResultScreen} />
+      <CredentialStack.Screen name="IssuerCatalog" component={IssuerCatalogScreen} />
+      <CredentialStack.Screen name="IssuerWebView" component={IssuerWebViewScreen} />
     </CredentialStack.Navigator>
   );
 }
@@ -60,6 +67,7 @@ function PresentationStackScreen() {
       <PresentationStack.Screen name="VPAuthorization" component={VPAuthorizationScreen} />
       <PresentationStack.Screen name="ChangeCard" component={ChangeCardScreen} />
       <PresentationStack.Screen name="VPResult" component={VPResultScreen} />
+      <PresentationStack.Screen name="OfflineBarcode" component={OfflineBarcodeScreen} />
     </PresentationStack.Navigator>
   );
 }
@@ -74,6 +82,8 @@ function SettingsStackScreen() {
     </SettingsStack.Navigator>
   );
 }
+
+export const TAB_BAR_HEIGHT = 82;
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -136,10 +146,18 @@ function CustomTabBar({state, navigation}: BottomTabBarProps) {
 }
 
 export default function MainTabs() {
+  const currentWalletId = useAuthStore(s => s.currentWalletId);
+  const {loadCredentials} = useWallet();
+  useEffect(() => {
+    if (currentWalletId) loadCredentials(currentWalletId);
+  }, [currentWalletId, loadCredentials]);
   return (
     <Tab.Navigator
       tabBar={props => <CustomTabBar {...props} />}
-      screenOptions={{headerShown: false, sceneStyle: {backgroundColor: colors.surface.bg}}}>
+      screenOptions={{
+        headerShown: false,
+        sceneStyle: {backgroundColor: colors.surface.bg, paddingBottom: TAB_BAR_HEIGHT},
+      }}>
       <Tab.Screen name="HomeTab" component={HomeStackScreen} />
       <Tab.Screen name="CredentialTab" component={CredentialStackScreen} />
       <Tab.Screen name="ShowCredentials" component={ShowCredentialsScreen} />
@@ -158,7 +176,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-around',
-    height: 82,
+    height: TAB_BAR_HEIGHT,
     paddingBottom: 14,
     paddingTop: 10,
     backgroundColor: colors.surface.bg,

@@ -27,6 +27,16 @@ export default function AddCredentialScreen({navigation}: Props) {
 
       <TouchableOpacity
         style={styles.option}
+        onPress={() => navigation.navigate('IssuerCatalog')}>
+        <Text style={styles.optionIcon}>📇</Text>
+        <View style={styles.optionContent}>
+          <Text style={styles.optionTitle}>{t('credential.catalog.title')}</Text>
+          <Text style={styles.optionDesc}>{t('credential.catalog.entryDesc')}</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.option}
         onPress={() => navigation.navigate('SearchCredential')}>
         <Text style={styles.optionIcon}>🔍</Text>
         <View style={styles.optionContent}>

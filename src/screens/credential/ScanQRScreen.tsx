@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Alert,
   Modal,
@@ -9,6 +9,7 @@ import {
   View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {useFocusEffect} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import type {CredentialStackParamList} from '../../navigation/types';
 import QRScanner from '../../components/QRScanner';
@@ -21,6 +22,7 @@ import {
   pickCredentialDisplay,
   type CredentialOffer,
 } from '../../services/protocol/oid4vci';
+import {isVPAuthorizeQr, getKnownVPRejection} from '../../services/protocol/oid4vp';
 import i18n from '../../config/i18n';
 import {sdJwtDecode} from '../../services/protocol/sdjwt';
 import {resolveDisplayImage} from '../../utils/credentialDisplay';
@@ -32,12 +34,13 @@ import {colors, type as fonts} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<CredentialStackParamList, 'ScanQR'>;
 
-export default function ScanQRScreen({navigation}: Props) {
+export default function ScanQRScreen({navigation, route}: Props) {
   const {t} = useTranslation();
   const {currentWallet} = useWallet();
   const addCredential = useWalletStore(s => s.addCredential);
+  const initialQr = route.params?.initialQr;
 
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(!!initialQr);
   const [pendingOffer, setPendingOffer] = useState<{
     qrCode: string;
     offer: CredentialOffer;
@@ -45,10 +48,39 @@ export default function ScanQRScreen({navigation}: Props) {
   const [txCode, setTxCode] = useState('');
   const [resetKey, setResetKey] = useState(0);
 
+  useFocusEffect(
+    useCallback(() => {
+      setResetKey(k => k + 1);
+    }, []),
+  );
+
+  const initialQrConsumed = useRef(false);
+  useEffect(() => {
+    if (!initialQr || initialQrConsumed.current) return;
+    initialQrConsumed.current = true;
+    handleScan(initialQr);
+  }, [initialQr]);
+
   const handleScan = async (data: string) => {
     if (!currentWallet?.didDocument) {
       Alert.alert(t('common.error'), t('auth.login'));
       navigation.goBack();
+      return;
+    }
+    if (isVPAuthorizeQr(data)) {
+      const rejection = getKnownVPRejection(data);
+      if (rejection) {
+        Alert.alert(
+          t('common.error'),
+          t(`presentation.errors.${rejection}`),
+          [{text: t('common.ok'), onPress: () => setResetKey(k => k + 1)}],
+        );
+        return;
+      }
+      navigation.getParent()?.navigate('PresentationTab', {
+        screen: 'VPAuthorization',
+        params: {qrData: data},
+      });
       return;
     }
     if (!isCredentialOfferQr(data)) {
@@ -165,7 +197,7 @@ export default function ScanQRScreen({navigation}: Props) {
       <QRScanner
         onScan={handleScan}
         onCancel={() => navigation.goBack()}
-        active={!busy && pendingOffer === null}
+        active={!busy && pendingOffer === null && !initialQr}
         resetKey={resetKey}
       />
       <Modal

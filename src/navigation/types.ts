@@ -17,17 +17,41 @@ export type HomeStackParamList = {
 
 export type CredentialStackParamList = {
   AddCredential: undefined;
-  ScanQR: undefined;
+  ScanQR: {initialQr?: string} | undefined;
   SearchCredential: undefined;
   AddResult: {success: boolean; message?: string; credentialId?: string};
   CredentialInfo: {credentialId: string};
+  IssuerCatalog: undefined;
+  IssuerWebView: {
+    url: string;
+    title?: string;
+  };
+};
+
+export type OfflineTxRef = {
+  vpUid: string;
+  verifierModuleUrl: string;
+  transactionId: string;
 };
 
 export type PresentationStackParamList = {
   PresentationHome: undefined;
-  VPAuthorization: {qrData: string; selectedCredentialId?: string};
-  ChangeCard: {qrData: string; currentCardId?: string};
+  VPAuthorization: {
+    qrData: string;
+    selectedCredentialId?: string;
+    offline?: OfflineTxRef;
+  };
+  ChangeCard: {
+    qrData: string;
+    currentCardId?: string;
+    offline?: OfflineTxRef;
+  };
   VPResult: {success: boolean; message?: string};
+  OfflineBarcode: {
+    verifierModuleUrl: string;
+    transactionId: string;
+    scenarioName?: string;
+  };
 };
 
 export type SettingsStackParamList = {

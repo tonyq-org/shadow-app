@@ -13,7 +13,7 @@ type Props = NativeStackScreenProps<PresentationStackParamList, 'ChangeCard'>;
 export default function ChangeCardScreen({navigation, route}: Props) {
   const {t} = useTranslation();
   const {currentCredentials} = useWallet();
-  const {qrData, currentCardId} = route.params;
+  const {qrData, currentCardId, offline} = route.params;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -35,6 +35,7 @@ export default function ChangeCardScreen({navigation, route}: Props) {
               navigation.navigate('VPAuthorization', {
                 qrData,
                 selectedCredentialId: item.id,
+                offline,
               })
             }
           />
