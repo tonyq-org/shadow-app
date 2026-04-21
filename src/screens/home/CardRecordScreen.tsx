@@ -5,24 +5,26 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {HomeStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
-import {getOperationRecords, type OperationRecord} from '../../db/recordDao';
+import {getPresentationRecords, type PresentationRecord} from '../../db/recordDao';
 import {colors} from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CardRecord'>;
 
-export default function CardRecordScreen({navigation}: Props) {
+export default function CardRecordScreen({navigation, route}: Props) {
   const {t} = useTranslation();
   const {currentWallet} = useWallet();
-  const [records, setRecords] = useState<OperationRecord[]>([]);
+  const {credentialId} = route.params;
+  const [records, setRecords] = useState<PresentationRecord[]>([]);
 
   useEffect(() => {
     if (!currentWallet) return;
     try {
-      setRecords(getOperationRecords(currentWallet.id));
+      const all = getPresentationRecords(currentWallet.id);
+      setRecords(all.filter(r => r.credentialIds.includes(credentialId)));
     } catch {
       setRecords([]);
     }
-  }, [currentWallet]);
+  }, [currentWallet, credentialId]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -39,9 +41,13 @@ export default function CardRecordScreen({navigation}: Props) {
         renderItem={({item}) => (
           <View style={styles.recordItem}>
             <Text style={styles.recordType}>
-              {t(`operations.${item.type}`, {defaultValue: item.type})}
+              {item.result === 1
+                ? t('operations.present')
+                : t('operations.presentFailed', {defaultValue: t('operations.present')})}
             </Text>
-            <Text style={styles.recordDetail}>{item.detail ?? '-'}</Text>
+            <Text style={styles.recordDetail}>
+              {item.verifierName ?? '-'}
+            </Text>
             <Text style={styles.recordDate}>
               {new Date(item.createdAt).toLocaleString()}
             </Text>
