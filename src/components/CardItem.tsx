@@ -12,6 +12,8 @@ import {
   MicrotextBorder,
   type EmblemKey,
 } from './emblems';
+import VerificationBadge from './VerificationBadge';
+import {deriveVerifications} from '../services/trust/deriveVerifications';
 
 type CardTone = 'midnight' | 'graphite' | 'ink';
 
@@ -30,7 +32,6 @@ interface Props {
 function pictureUri(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   if (raw.startsWith('data:') || raw.startsWith('http')) return raw;
-  // Bare base64 — assume JPEG (TWDIW portraits) and wrap it.
   return `data:image/jpeg;base64,${raw}`;
 }
 
@@ -94,6 +95,11 @@ export default function CardItem({
     [credential.issuerName, credential.issuerDid],
   );
 
+  const verifications = useMemo(
+    () => deriveVerifications(credential.issuerDid),
+    [credential.issuerDid],
+  );
+
   const displayName = credential.displayName ?? t('credential.defaultName');
   const holder = holderName ?? '— · —';
   const idLabel = idNumber ?? (credential.id.slice(0, 4).toUpperCase() + ' · ' + credential.id.slice(-8).toUpperCase());
@@ -102,18 +108,7 @@ export default function CardItem({
   const Container = onPress ? TouchableOpacity : View;
   const hasArtwork = !!credential.displayImage;
 
-  // When the issuer supplies a full-bleed card background, let it own the
-  // visual treatment — no gradient/guilloche/holo/scrim — and use dark ink
-  // text to read on (typically light) artwork. Matches TWDIW official app.
   if (hasArtwork) {
-    const statusBadge = isExpired
-      ? {label: t('credential.status.expired'), tone: 'danger' as const}
-      : credential.status === CredentialStatus.Revoked
-        ? {label: t('credential.status.revoked'), tone: 'danger' as const}
-        : credential.status === CredentialStatus.Verified
-          ? {label: t('credential.status.verified'), tone: 'ok' as const}
-          : {label: t('credential.status.unverified'), tone: 'muted' as const};
-
     return (
       <Container
         style={[
@@ -135,36 +130,15 @@ export default function CardItem({
           />
         )}
 
-        <View style={styles.artworkContent} pointerEvents="none">
-          <View style={styles.artworkTopRow}>
-            <View style={{flex: 1, paddingRight: 12}}>
-              <Text style={styles.artworkName} numberOfLines={2}>
-                {displayName}
-              </Text>
-            </View>
-          </View>
+        <VerificationBadge verifications={verifications} />
 
-          <View style={styles.artworkBottomRow}>
+        {idNumber ? (
+          <View style={styles.artworkFooter} pointerEvents="none">
             <Text style={styles.artworkIdNumber} numberOfLines={1}>
-              {idNumber ?? idLabel}
+              {idNumber}
             </Text>
-            <View
-              style={[
-                styles.artworkBadge,
-                statusBadge.tone === 'danger' && styles.artworkBadgeDanger,
-                statusBadge.tone === 'ok' && styles.artworkBadgeOk,
-              ]}>
-              <Text
-                style={[
-                  styles.artworkBadgeText,
-                  statusBadge.tone === 'danger' && styles.artworkBadgeTextDanger,
-                  statusBadge.tone === 'ok' && styles.artworkBadgeTextOk,
-                ]}>
-                {statusBadge.label}
-              </Text>
-            </View>
           </View>
-        </View>
+        ) : null}
       </Container>
     );
   }
@@ -190,6 +164,8 @@ export default function CardItem({
         </View>
       )}
       <MicrotextBorder width={cardWidth} height={cardHeight} />
+
+      <VerificationBadge verifications={verifications} />
 
       <View style={styles.content} pointerEvents="none">
         <View style={styles.topRow}>
@@ -224,24 +200,19 @@ export default function CardItem({
             <Text style={styles.idNumber} numberOfLines={1}>
               {idLabel}
             </Text>
-            {verified ? (
-              <View style={styles.verifiedChip}>
-                <View style={styles.verifiedDot} />
-                <Text style={styles.verifiedText}>VERIFIED</Text>
-              </View>
-            ) : isExpired ? (
-              <View style={[styles.verifiedChip, styles.expiredChip]}>
-                <Text style={[styles.verifiedText, {color: colors.status.danger}]}>EXPIRED</Text>
+            {isExpired ? (
+              <View style={[styles.bottomChip, styles.expiredChip]}>
+                <Text style={[styles.bottomChipText, {color: colors.status.danger}]}>
+                  EXPIRED
+                </Text>
               </View>
             ) : credential.status === CredentialStatus.Revoked ? (
-              <View style={[styles.verifiedChip, styles.revokedChip]}>
-                <Text style={[styles.verifiedText, {color: colors.status.danger}]}>REVOKED</Text>
+              <View style={[styles.bottomChip, styles.revokedChip]}>
+                <Text style={[styles.bottomChipText, {color: colors.status.danger}]}>
+                  REVOKED
+                </Text>
               </View>
-            ) : (
-              <View style={[styles.verifiedChip, styles.pendingChip]}>
-                <Text style={[styles.verifiedText, {color: colors.text.dim}]}>UNVERIFIED</Text>
-              </View>
-            )}
+            ) : null}
           </View>
         </View>
       </View>
@@ -276,77 +247,26 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingVertical: 20,
+    paddingTop: 80,
+    paddingBottom: 20,
     paddingHorizontal: 22,
     justifyContent: 'space-between',
   },
-  bgScrim: {backgroundColor: 'rgba(8,12,20,0.55)'},
   expiredOverlay: {
     backgroundColor: 'rgba(246,241,227,0.55)',
   },
-  artworkContent: {
+  artworkFooter: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    justifyContent: 'space-between',
+    left: 20,
+    right: 20,
+    bottom: 16,
   },
-  artworkTopRow: {flexDirection: 'row', alignItems: 'flex-start'},
-  artworkCategory: {
-    fontFamily: fonts.sans,
-    fontSize: 11,
-    letterSpacing: 0.4,
-    color: 'rgba(20,20,20,0.65)',
-    marginBottom: 4,
-  },
-  artworkName: {
-    fontFamily: fonts.serifTC ?? fonts.serif,
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-    lineHeight: 24,
-    color: '#141414',
-  },
-  artworkBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: 'rgba(20,20,20,0.08)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(20,20,20,0.18)',
-  },
-  artworkBadgeDanger: {
-    backgroundColor: 'rgba(200,50,50,0.12)',
-    borderColor: 'rgba(200,50,50,0.45)',
-  },
-  artworkBadgeOk: {
-    backgroundColor: 'rgba(20,120,70,0.14)',
-    borderColor: 'rgba(20,120,70,0.45)',
-  },
-  artworkBadgeText: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 10,
-    letterSpacing: 0.4,
-    color: 'rgba(20,20,20,0.75)',
-  },
-  artworkBadgeTextDanger: {color: '#8A1F1F'},
-  artworkBadgeTextOk: {color: '#1F6B42'},
   artworkIdNumber: {
     fontFamily: fonts.monoMedium,
     fontSize: 13,
     letterSpacing: 1.5,
     color: '#141414',
     opacity: 0.85,
-    flex: 1,
-    marginRight: 12,
-  },
-  artworkBottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   topRow: {flexDirection: 'row', alignItems: 'flex-start'},
   portrait: {
@@ -406,16 +326,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
-  verifiedChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  bottomChip: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: colors.brand.brass15,
     borderWidth: 0.5,
-    borderColor: colors.brand.brass66,
   },
   expiredChip: {
     backgroundColor: 'rgba(232,138,138,0.12)',
@@ -425,20 +340,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(232,138,138,0.12)',
     borderColor: 'rgba(232,138,138,0.5)',
   },
-  pendingChip: {
-    backgroundColor: 'rgba(246,241,227,0.08)',
-    borderColor: 'rgba(246,241,227,0.2)',
-  },
-  verifiedDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.brand.brass,
-  },
-  verifiedText: {
+  bottomChipText: {
     fontFamily: fonts.mono,
     fontSize: 9,
     letterSpacing: 1,
-    color: colors.brand.brass,
   },
 });

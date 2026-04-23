@@ -11,6 +11,8 @@ import TopChrome from '../../components/TopChrome';
 import {colors, type as fonts} from '../../theme/tokens';
 import {extractCardDisplay} from '../../utils/credentialDisplay';
 import {refreshIssuerTrustList} from '../../services/trust/issuerTrustList';
+import {deriveVerifications} from '../../services/trust/deriveVerifications';
+import {getTrustList} from '../../services/trust/trustListRegistry';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CardOverview'>;
 
@@ -30,9 +32,6 @@ export default function CardOverviewScreen({navigation}: Props) {
   }, []);
 
   const count = currentCredentials.length;
-  const issuers = new Set(
-    currentCredentials.map(c => c.issuerName ?? c.issuerDid).filter(Boolean),
-  ).size;
 
   const displayByCredential = useMemo(() => {
     const map = new Map<string, ReturnType<typeof extractCardDisplay>>();
@@ -40,6 +39,17 @@ export default function CardOverviewScreen({navigation}: Props) {
       map.set(c.id, extractCardDisplay(c.rawJwt));
     }
     return map;
+  }, [currentCredentials]);
+
+  const trustListCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of currentCredentials) {
+      const verifications = deriveVerifications(c.issuerDid);
+      for (const v of verifications) {
+        counts.set(v.trustList, (counts.get(v.trustList) ?? 0) + 1);
+      }
+    }
+    return counts;
   }, [currentCredentials]);
 
   return (
@@ -71,10 +81,31 @@ export default function CardOverviewScreen({navigation}: Props) {
                 <Text style={styles.countBadge}>· {count}</Text>
               ) : null}
             </View>
-            {count > 0 ? (
-              <Text style={styles.subtitle}>
-                {t('home.issuersLine', {count: issuers})}
-              </Text>
+            {trustListCounts.size > 0 ? (
+              <View style={styles.trustRow}>
+                {Array.from(trustListCounts.entries()).map(([id, n]) => {
+                  const tl = getTrustList(id);
+                  return (
+                    <View
+                      key={id}
+                      style={[
+                        styles.trustPill,
+                        {
+                          borderColor: `${tl.color}44`,
+                          backgroundColor: `${tl.color}14`,
+                        },
+                      ]}>
+                      <View
+                        style={[styles.trustDot, {backgroundColor: tl.color}]}
+                      />
+                      <Text style={[styles.trustShort, {color: tl.color}]}>
+                        {tl.short}
+                      </Text>
+                      <Text style={styles.trustCount}>· {n}</Text>
+                    </View>
+                  );
+                })}
+              </View>
             ) : null}
           </View>
         }
@@ -114,11 +145,37 @@ const styles = StyleSheet.create({
     color: colors.text.dim,
     marginBottom: 6,
   },
-  subtitle: {
-    fontFamily: fonts.sans,
-    fontSize: 13,
+  trustRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 14,
+  },
+  trustPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 0.5,
+  },
+  trustDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
+  trustShort: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 1.3,
+    fontWeight: '500',
+  },
+  trustCount: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
     color: colors.text.dim,
-    marginTop: 8,
+    letterSpacing: 1,
   },
   empty: {alignItems: 'center', paddingTop: 80},
   emptyText: {

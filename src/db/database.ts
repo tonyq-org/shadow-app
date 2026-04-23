@@ -1,6 +1,7 @@
 import {open, type DB} from '@op-engineering/op-sqlite';
 import * as Keychain from 'react-native-keychain';
 import {randomBytes, bytesToHex} from '@noble/hashes/utils.js';
+import {runMigrations} from './migrations';
 
 export interface Database {
   execute(sql: string, params?: unknown[]): {rows: Record<string, unknown>[]};
@@ -62,7 +63,23 @@ export async function initDatabase(): Promise<void> {
     temp.delete();
     rawDb = open({name: DB_NAME, encryptionKey: key});
   }
-  initTables(wrapDb(rawDb));
+  const db = wrapDb(rawDb);
+  initTables(db);
+  applyMigrations(db);
+}
+
+function applyMigrations(db: Database): void {
+  // `initTables` creates the v1 baseline idempotently (the same CREATE IF NOT
+  // EXISTS statements migration v1 issues), so existing installs sit at
+  // version >= 1. Treat user_version 0 as "baseline already ensured by
+  // initTables" and let migrations.ts handle v2+ from there.
+  const row = db.execute('PRAGMA user_version').rows[0];
+  const raw = row ? (row.user_version as number | undefined) : 0;
+  const current = raw && raw > 0 ? raw : 1;
+  const next = runMigrations(db, current);
+  if (next !== current) {
+    db.execute(`PRAGMA user_version = ${next}`);
+  }
 }
 
 function initTables(db: Database): void {

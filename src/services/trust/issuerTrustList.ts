@@ -10,17 +10,12 @@ import {
 
 const MODA_BASE_URL = 'https://frontend.wallet.gov.tw';
 
-/**
- * Candidate paths for the issuer trust list (DWSDK-601i / downloadIssList).
- * The official TWDIW app hides the exact path inside its Flutter SDK bridge —
- * we probe these in order until one responds with a JSON array.
- */
-const CANDIDATE_PATHS = [
-  '/api/moda/dwapp/issuer/list',
-  '/api/moda/issuer/list',
-  '/api/moda/dwapp/trust/issList',
-  '/api/moda/trust/issList',
-];
+// Mirrors TWDIW Flutter SDK `getVCIssList` — GET /api/did paginated by
+// size/page. Response envelope is {code:"0", data:{dids:[...], count:N}}.
+// orgType=1 / status=1 match the official app: organizational issuers,
+// status "enabled".
+const ISS_LIST_PATH = '/api/did';
+const PAGE_SIZE = 50;
 
 const REFRESH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour, same as TWDIW
 
@@ -32,38 +27,56 @@ interface RawIssuerEntry {
   updatedAt?: number;
 }
 
+interface IssListPage {
+  code?: string;
+  data?: {
+    dids?: RawIssuerEntry[];
+    count?: number;
+  };
+}
+
+async function fetchPage(
+  page: number,
+): Promise<{entries: RawIssuerEntry[]; count: number} | null> {
+  const url = `${MODA_BASE_URL}${ISS_LIST_PATH}?size=${PAGE_SIZE}&page=${page}&orgType=1&status=1`;
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {Accept: 'application/json'},
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as IssListPage;
+    if (body.code !== '0' || !body.data) return null;
+    return {
+      entries: body.data.dids ?? [],
+      count: body.data.count ?? 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Fetch the issuer trust list from the MODA backend. Probes candidate URLs
- * until one returns a JSON array. Returns null if none succeed — caller
- * should treat this as "keep using existing cache, don't wipe it".
+ * Fetch the full issuer trust list by walking pages until we've seen `count`
+ * entries. Returns null on any network/parse failure — caller keeps the
+ * existing cache instead of wiping it.
  */
 async function fetchFromNetwork(): Promise<IssuerTrust[] | null> {
   const now = Date.now();
-  for (const path of CANDIDATE_PATHS) {
-    try {
-      const res = await fetch(`${MODA_BASE_URL}${path}`, {
-        method: 'GET',
-        headers: {Accept: 'application/json'},
-      });
-      if (!res.ok) continue;
-      const body = (await res.json()) as unknown;
-      const entries = extractEntries(body);
-      if (!entries) continue;
-      return entries.map(raw => toIssuerTrust(raw, now));
-    } catch {
-      /* try next path */
-    }
-  }
-  return null;
-}
+  const first = await fetchPage(0);
+  if (!first) return null;
 
-function extractEntries(body: unknown): RawIssuerEntry[] | null {
-  if (Array.isArray(body)) return body as RawIssuerEntry[];
-  if (body && typeof body === 'object') {
-    const wrapped = (body as {data?: unknown}).data;
-    if (Array.isArray(wrapped)) return wrapped as RawIssuerEntry[];
+  const all: RawIssuerEntry[] = [...first.entries];
+  const total = first.count;
+  let page = 1;
+  while (all.length < total && first.entries.length > 0) {
+    const next = await fetchPage(page);
+    if (!next || next.entries.length === 0) break;
+    all.push(...next.entries);
+    page += 1;
+    if (page > 100) break; // hard stop, protect against runaway pagination
   }
-  return null;
+  return all.map(raw => toIssuerTrust(raw, now));
 }
 
 function toIssuerTrust(raw: RawIssuerEntry, fetchedAt: number): IssuerTrust {
