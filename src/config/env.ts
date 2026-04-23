@@ -12,7 +12,7 @@ try {
 }
 
 export const env = {
-  appName: Config.APP_NAME ?? 'Shadow Wallet',
+  appName: Config.APP_NAME ?? 'TW Shadow Digital Identity Wallet',
   appScheme: Config.APP_SCHEME ?? 'shadowwallet',
   frontendUrl: Config.FRONTEND_URL ?? 'https://frontend.wallet.gov.tw',
   trustListApiUrl: Config.TRUST_LIST_API_URL ?? 'https://frontend.wallet.gov.tw',

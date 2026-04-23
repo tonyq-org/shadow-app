@@ -46,10 +46,10 @@ export default function TermsScreen({navigation}: Props) {
   );
 }
 
-const TERMS_CONTENT = `Shadow Wallet 服務條款
+const TERMS_CONTENT = `台灣影子皮夾 服務條款
 
 1. 服務說明
-Shadow Wallet 是一個開源的數位憑證管理工具，遵循 W3C Verifiable Credentials 標準。
+台灣影子皮夾（TW Shadow Digital Identity Wallet）是一個開源的數位憑證管理工具，遵循 W3C Verifiable Credentials 標準。
 
 2. 使用者責任
 使用者應妥善保管 PIN 碼和生物辨識資訊。遺失 PIN 碼將無法存取皮夾內的憑證。

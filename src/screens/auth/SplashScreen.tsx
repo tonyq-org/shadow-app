@@ -24,8 +24,8 @@ export default function SplashScreen({navigation}: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Shadow Wallet</Text>
-      <Text style={styles.subtitle}>Digital Wallet</Text>
+      <Text style={styles.title}>台灣影子皮夾</Text>
+      <Text style={styles.subtitle}>TW Shadow Digital Identity Wallet</Text>
       <ActivityIndicator size="large" color="#2563EB" style={styles.spinner} />
     </View>
   );
