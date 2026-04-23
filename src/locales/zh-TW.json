@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Shadow Wallet"
+    "name": "台灣影子皮夾"
   },
   "common": {
     "confirm": "確認",
@@ -45,8 +45,11 @@
     "biometricEnableFailed": "啟用生物辨識失敗",
     "biometricPrompt": "驗證使用者",
     "verifyPinToEnableBiometric": "請輸入 PIN 碼\n以啟用生物辨識",
+    "biometricRequiredTitle": "需要生物辨識",
+    "biometricRequiredBody": "本 App 採用生物辨識登入。請先到系統設定啟用指紋或 Face ID 後再建立皮夾。",
+    "biometricEnableAtCreateFailed": "生物辨識啟用失敗，稍後可於設定頁重試。",
     "biometricChangedTitle": "生物辨識已變更",
-    "biometricChangedBody": "偵測到裝置上的生物辨識重新註冊，為安全起見已關閉此皮夾的生物辨識登入，請改用 PIN 碼。",
+    "biometricChangedBody": "偵測到裝置的生物辨識已重新註冊。為了安全起見，請先用 PIN 登入，我們會協助你重新綁定新的生物辨識。",
     "biometricLocked": "生物辨識暫時被鎖定，請稍後再試或改用 PIN 碼。",
     "biometricLockedPermanent": "生物辨識已被永久鎖定，請到系統設定重新解鎖後再試。",
     "biometricUnavailable": "生物辨識目前不可用"
@@ -136,6 +139,13 @@
     "walletSettings": "皮夾設定",
     "changeWalletName": "變更皮夾名稱",
     "changePinCode": "變更 PIN 碼",
+    "changePinVerifyTitle": "請輸入\n目前的 PIN 碼",
+    "changePinVerifyBody": "驗證身分後即可設定新的 PIN 碼。",
+    "changePinSetTitle": "設定新的\n六位數 PIN 碼",
+    "changePinSetBody": "新 PIN 碼會使用新的 salt 重新推導並儲存於硬體安全模組。",
+    "changePinConfirmTitle": "再次輸入\n以確認",
+    "changePinConfirmBody": "請重複輸入剛才設定的新 PIN 碼，以避免輸入錯誤。",
+    "changePinSuccess": "PIN 碼變更成功。",
     "biometricLogin": "生物辨識登入",
     "autoLogout": "自動登出",
     "autoLogoutMinutes": "{{minutes}} 分鐘",

@@ -8,72 +8,103 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
-import type {AuthStackParamList} from '../../navigation/types';
+import type {SettingsStackParamList} from '../../navigation/types';
 import {useWallet} from '../../hooks/useWallet';
-import {useAuthStore} from '../../store/authStore';
 import {useWalletStore} from '../../store/walletStore';
 import PinCodeInput from '../../components/PinCodeInput';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import {generateSalt, hashPinAsync} from '../../utils/pin';
-import {enableBiometricUnlock} from '../../native/BiometricUnlock';
+import {generateSalt, hashPinAsync, verifyPinAsync} from '../../utils/pin';
 import * as walletDao from '../../db/walletDao';
 import {colors, type as fonts} from '../../theme/tokens';
 import {IconChevron} from '../../components/icons';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'CreatePinCode'>;
+type Props = NativeStackScreenProps<SettingsStackParamList, 'ChangePinCode'>;
 
-export default function CreatePinCodeScreen({navigation, route}: Props) {
+type Step = 'verify' | 'set' | 'confirm';
+
+export default function ChangePinCodeScreen({navigation}: Props) {
   const {t} = useTranslation();
-  const {walletName} = route.params;
-  const {createNewWallet} = useWallet();
-  const login = useAuthStore(s => s.login);
+  const {currentWallet} = useWallet();
   const updateWallet = useWalletStore(s => s.updateWallet);
 
-  const [step, setStep] = useState<'set' | 'confirm'>('set');
-  const [pin, setPin] = useState('');
+  const [step, setStep] = useState<Step>('verify');
+  const [newPin, setNewPin] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handlePinComplete = async (value: string) => {
-    if (step === 'set') {
-      setPin(value);
-      setStep('confirm');
-    } else {
-      if (value !== pin) {
-        Alert.alert(t('common.error'), t('auth.pinCodeMismatch'));
-        setStep('set');
-        setPin('');
-        return;
-      }
+  if (!currentWallet) {
+    navigation.goBack();
+    return null;
+  }
 
+  const handlePinComplete = async (value: string) => {
+    if (step === 'verify') {
       setLoading(true);
       try {
-        const salt = generateSalt();
-        const pinHash = await hashPinAsync(value, salt);
-        const wallet = await createNewWallet(walletName, pinHash, salt);
-        const enabled = await enableBiometricUnlock(wallet.id);
-        if (enabled) {
-          walletDao.updateBiometricEnabled(wallet.id, true);
-          updateWallet(wallet.id, {biometricEnabled: true});
-        } else {
-          Alert.alert(
-            t('common.error'),
-            t('auth.biometricEnableAtCreateFailed'),
-          );
+        const ok = await verifyPinAsync(
+          value,
+          currentWallet.pinSalt,
+          currentWallet.pinHash,
+        );
+        if (!ok) {
+          Alert.alert(t('common.error'), t('auth.wrongPinCode'));
+          return;
         }
-        login(wallet.id);
-      } catch (error: any) {
-        Alert.alert(t('common.error'), error.message);
         setStep('set');
-        setPin('');
       } finally {
         setLoading(false);
       }
+      return;
+    }
+
+    if (step === 'set') {
+      setNewPin(value);
+      setStep('confirm');
+      return;
+    }
+
+    if (value !== newPin) {
+      Alert.alert(t('common.error'), t('auth.pinCodeMismatch'));
+      setStep('set');
+      setNewPin('');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const salt = generateSalt();
+      const pinHash = await hashPinAsync(value, salt);
+      walletDao.updatePin(currentWallet.id, pinHash, salt);
+      updateWallet(currentWallet.id, {pinHash, pinSalt: salt});
+      Alert.alert(t('common.success'), t('settings.changePinSuccess'), [
+        {text: t('common.ok'), onPress: () => navigation.goBack()},
+      ]);
+    } catch (e: any) {
+      Alert.alert(t('common.error'), e?.message ?? '');
+      setStep('set');
+      setNewPin('');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const stepLabel = step === 'set' ? 'STEP · 02 · OF · 03' : 'STEP · 03 · OF · 03';
-  const title = step === 'set' ? t('auth.setPinTitle') : t('auth.confirmPinTitle');
-  const body = step === 'set' ? t('auth.setPinBody') : t('auth.confirmPinBody');
+  const stepLabel =
+    step === 'verify'
+      ? 'STEP · 01 · OF · 03'
+      : step === 'set'
+      ? 'STEP · 02 · OF · 03'
+      : 'STEP · 03 · OF · 03';
+  const title =
+    step === 'verify'
+      ? t('settings.changePinVerifyTitle')
+      : step === 'set'
+      ? t('settings.changePinSetTitle')
+      : t('settings.changePinConfirmTitle');
+  const body =
+    step === 'verify'
+      ? t('settings.changePinVerifyBody')
+      : step === 'set'
+      ? t('settings.changePinSetBody')
+      : t('settings.changePinConfirmBody');
 
   return (
     <SafeAreaView style={styles.container}>

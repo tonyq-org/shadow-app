@@ -49,7 +49,7 @@ export default function SettingScreen({navigation}: Props) {
     {
       icon: <IconShield size={14} color={colors.text.dim} />,
       label: t('settings.changePinCode'),
-      right: {kind: 'chevron', onPress: () => navigation.navigate('WalletSetting')},
+      right: {kind: 'chevron', onPress: () => navigation.navigate('ChangePinCode')},
     },
     ...(bioSupported
       ? [

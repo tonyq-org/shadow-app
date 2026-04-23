@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {colors, type as fonts} from '../theme/tokens';
 
@@ -25,15 +25,17 @@ const KEYS: Array<{label: string; value: string; special?: 'back'}> = [
 
 export default function PinCodeInput({length, onComplete, disabled}: Props) {
   const [pin, setPin] = useState('');
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     if (pin.length === length) {
       const snapshot = pin;
-      onComplete(snapshot);
+      onCompleteRef.current(snapshot);
       const t = setTimeout(() => setPin(''), 250);
       return () => clearTimeout(t);
     }
-  }, [pin, length, onComplete]);
+  }, [pin, length]);
 
   const press = (k: (typeof KEYS)[number]) => {
     if (disabled) return;

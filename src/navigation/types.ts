@@ -57,6 +57,7 @@ export type PresentationStackParamList = {
 export type SettingsStackParamList = {
   Setting: undefined;
   WalletSetting: undefined;
+  ChangePinCode: undefined;
   OperationLog: undefined;
 };
 

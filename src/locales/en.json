@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Shadow Wallet"
+    "name": "TW Shadow Digital Identity Wallet"
   },
   "common": {
     "confirm": "Confirm",
@@ -45,8 +45,11 @@
     "biometricEnableFailed": "Failed to enable biometric login",
     "biometricPrompt": "Verify it's you",
     "verifyPinToEnableBiometric": "Enter your PIN\nto enable biometrics",
+    "biometricRequiredTitle": "Biometric Required",
+    "biometricRequiredBody": "This app uses biometric login. Please enable fingerprint or Face ID in your device settings before creating a wallet.",
+    "biometricEnableAtCreateFailed": "Could not enable biometric login. You can turn it on later from Settings.",
     "biometricChangedTitle": "Biometrics Changed",
-    "biometricChangedBody": "A change in this device's biometric enrollment was detected. For your safety, biometric login has been disabled on this wallet. Please sign in with your PIN.",
+    "biometricChangedBody": "A change in this device's biometric enrollment was detected. Please sign in with your PIN — we'll help you re-bind your new biometric right after.",
     "biometricLocked": "Biometrics are temporarily locked. Please try again later or use your PIN.",
     "biometricLockedPermanent": "Biometrics are permanently locked. Please re-authenticate in the system settings.",
     "biometricUnavailable": "Biometrics are currently unavailable"
@@ -136,6 +139,13 @@
     "walletSettings": "Wallet Settings",
     "changeWalletName": "Change Wallet Name",
     "changePinCode": "Change PIN Code",
+    "changePinVerifyTitle": "Enter your\ncurrent PIN",
+    "changePinVerifyBody": "Confirm your identity before setting a new PIN.",
+    "changePinSetTitle": "Set your new\n6-digit PIN",
+    "changePinSetBody": "Your new PIN will be re-hashed with a fresh salt and stored in the hardware secure module.",
+    "changePinConfirmTitle": "Re-enter\nto confirm",
+    "changePinConfirmBody": "Please re-enter your new PIN to confirm it was typed correctly.",
+    "changePinSuccess": "PIN code changed successfully.",
     "biometricLogin": "Biometric Login",
     "autoLogout": "Auto Logout",
     "autoLogoutMinutes": "{{minutes}} minutes",

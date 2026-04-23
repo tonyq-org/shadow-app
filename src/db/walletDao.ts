@@ -66,6 +66,15 @@ export function updateAutoLogout(id: string, minutes: number): void {
   ]);
 }
 
+export function updatePin(id: string, pinHash: string, pinSalt: string): void {
+  const db = getDatabase();
+  db.execute('UPDATE wallet SET pin_hash = ?, pin_salt = ? WHERE id = ?', [
+    pinHash,
+    pinSalt,
+    id,
+  ]);
+}
+
 export function updateBiometricEnabled(id: string, enabled: boolean): void {
   const db = getDatabase();
   db.execute('UPDATE wallet SET biometric_enabled = ? WHERE id = ?', [

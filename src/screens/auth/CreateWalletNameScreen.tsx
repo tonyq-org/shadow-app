@@ -1,21 +1,40 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
   TextInput,
   StyleSheet,
-  TouchableOpacity} from 'react-native';
+  TouchableOpacity,
+  Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import type {AuthStackParamList} from '../../navigation/types';
 import {colors} from '../../theme/tokens';
+import {isBiometricAvailable} from '../../native/BiometricAuth';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'CreateWalletName'>;
 
 export default function CreateWalletNameScreen({navigation}: Props) {
   const {t} = useTranslation();
   const [name, setName] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const available = await isBiometricAvailable();
+      if (cancelled || available) return;
+      Alert.alert(
+        t('auth.biometricRequiredTitle'),
+        t('auth.biometricRequiredBody'),
+        [{text: t('common.ok'), onPress: () => navigation.goBack()}],
+        {cancelable: false},
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigation, t]);
 
   const isValid = name.trim().length > 0;
 

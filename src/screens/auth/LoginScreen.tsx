@@ -17,7 +17,11 @@ import PinCodeInput from '../../components/PinCodeInput';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import {verifyPinAsync} from '../../utils/pin';
 import {isBiometricAvailable} from '../../native/BiometricAuth';
-import {verifyBiometric, disableBiometricUnlock} from '../../native/BiometricUnlock';
+import {
+  verifyBiometric,
+  disableBiometricUnlock,
+  enableBiometricUnlock,
+} from '../../native/BiometricUnlock';
 import {BiometryErrorCode} from '../../native/BiometricErrors';
 import * as walletDao from '../../db/walletDao';
 import {colors, type as fonts} from '../../theme/tokens';
@@ -34,6 +38,7 @@ export default function LoginScreen({navigation}: Props) {
   const [biometricReady, setBiometricReady] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const autoTriggeredRef = useRef<string | null>(null);
+  const reEnableAfterPinRef = useRef<boolean>(false);
 
   const selectedWallet = wallets[selectedWalletIndex];
 
@@ -53,6 +58,7 @@ export default function LoginScreen({navigation}: Props) {
       walletDao.updateBiometricEnabled(selectedWallet.id, false);
       updateWallet(selectedWallet.id, {biometricEnabled: false});
       setBiometricReady(false);
+      reEnableAfterPinRef.current = true;
       Alert.alert(t('auth.biometricChangedTitle'), t('auth.biometricChangedBody'));
       return;
     }
@@ -99,6 +105,14 @@ export default function LoginScreen({navigation}: Props) {
     try {
       const ok = await verifyPinAsync(value, selectedWallet.pinSalt, selectedWallet.pinHash);
       if (ok) {
+        if (reEnableAfterPinRef.current) {
+          reEnableAfterPinRef.current = false;
+          const enabled = await enableBiometricUnlock(selectedWallet.id);
+          if (enabled) {
+            walletDao.updateBiometricEnabled(selectedWallet.id, true);
+            updateWallet(selectedWallet.id, {biometricEnabled: true});
+          }
+        }
         login(selectedWallet.id);
       } else {
         Alert.alert(t('auth.loginFailed'), t('auth.wrongPinCode'));

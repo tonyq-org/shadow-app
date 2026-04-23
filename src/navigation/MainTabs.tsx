@@ -32,6 +32,7 @@ import VPResultScreen from '../screens/presentation/VPResultScreen';
 import OfflineBarcodeScreen from '../screens/presentation/OfflineBarcodeScreen';
 import SettingScreen from '../screens/settings/SettingScreen';
 import WalletSettingScreen from '../screens/settings/WalletSettingScreen';
+import ChangePinCodeScreen from '../screens/settings/ChangePinCodeScreen';
 import OperationLogScreen from '../screens/settings/OperationLogScreen';
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -78,6 +79,7 @@ function SettingsStackScreen() {
     <SettingsStack.Navigator screenOptions={{headerShown: false, contentStyle: {backgroundColor: colors.surface.bg}}}>
       <SettingsStack.Screen name="Setting" component={SettingScreen} />
       <SettingsStack.Screen name="WalletSetting" component={WalletSettingScreen} />
+      <SettingsStack.Screen name="ChangePinCode" component={ChangePinCodeScreen} />
       <SettingsStack.Screen name="OperationLog" component={OperationLogScreen} />
     </SettingsStack.Navigator>
   );
