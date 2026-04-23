@@ -14,7 +14,9 @@ import {useWalletStore} from '../../store/walletStore';
 import PinCodeInput from '../../components/PinCodeInput';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import {generateSalt, hashPinAsync, verifyPinAsync} from '../../utils/pin';
+import {computePinGate} from '../../utils/pinGate';
 import * as walletDao from '../../db/walletDao';
+import {addOperationRecord} from '../../db/recordDao';
 import {colors, type as fonts} from '../../theme/tokens';
 import {IconChevron} from '../../components/icons';
 
@@ -38,6 +40,17 @@ export default function ChangePinCodeScreen({navigation}: Props) {
 
   const handlePinComplete = async (value: string) => {
     if (step === 'verify') {
+      const gate = computePinGate(
+        currentWallet.pinFailureCount,
+        currentWallet.pinFailureAt,
+      );
+      if (!gate.allowed) {
+        Alert.alert(
+          t('auth.pinLockedTitle'),
+          t('auth.pinLockedBody', {seconds: gate.remainingSeconds}),
+        );
+        return;
+      }
       setLoading(true);
       try {
         const ok = await verifyPinAsync(
@@ -46,9 +59,29 @@ export default function ChangePinCodeScreen({navigation}: Props) {
           currentWallet.pinHash,
         );
         if (!ok) {
-          Alert.alert(t('common.error'), t('auth.wrongPinCode'));
+          const next = walletDao.recordPinFailure(currentWallet.id);
+          updateWallet(currentWallet.id, {
+            pinFailureCount: next.count,
+            pinFailureAt: next.at,
+          });
+          addOperationRecord(
+            currentWallet.id,
+            'changePassword',
+            `failed:verify:${next.count}`,
+          );
+          const after = computePinGate(next.count, next.at);
+          if (!after.allowed) {
+            Alert.alert(
+              t('auth.pinLockedTitle'),
+              t('auth.pinLockedBody', {seconds: after.remainingSeconds}),
+            );
+          } else {
+            Alert.alert(t('common.error'), t('auth.wrongPinCode'));
+          }
           return;
         }
+        walletDao.resetPinFailures(currentWallet.id);
+        updateWallet(currentWallet.id, {pinFailureCount: 0, pinFailureAt: 0});
         setStep('set');
       } finally {
         setLoading(false);
@@ -75,6 +108,7 @@ export default function ChangePinCodeScreen({navigation}: Props) {
       const pinHash = await hashPinAsync(value, salt);
       walletDao.updatePin(currentWallet.id, pinHash, salt);
       updateWallet(currentWallet.id, {pinHash, pinSalt: salt});
+      addOperationRecord(currentWallet.id, 'changePassword', 'success');
       Alert.alert(t('common.success'), t('settings.changePinSuccess'), [
         {text: t('common.ok'), onPress: () => navigation.goBack()},
       ]);

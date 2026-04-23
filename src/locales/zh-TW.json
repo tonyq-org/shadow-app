@@ -52,7 +52,9 @@
     "biometricChangedBody": "偵測到裝置的生物辨識已重新註冊。為了安全起見，請先用 PIN 登入，我們會協助你重新綁定新的生物辨識。",
     "biometricLocked": "生物辨識暫時被鎖定，請稍後再試或改用 PIN 碼。",
     "biometricLockedPermanent": "生物辨識已被永久鎖定，請到系統設定重新解鎖後再試。",
-    "biometricUnavailable": "生物辨識目前不可用"
+    "biometricUnavailable": "生物辨識目前不可用",
+    "pinLockedTitle": "PIN 暫時鎖定",
+    "pinLockedBody": "連續輸入錯誤次數過多。請於 {{seconds}} 秒後再試。"
   },
   "home": {
     "title": "我的憑證",

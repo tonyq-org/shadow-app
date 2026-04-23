@@ -93,6 +93,8 @@ function initTables(db: Database): void {
       public_key_jwk TEXT,
       auto_logout_minutes INTEGER DEFAULT 5,
       biometric_enabled INTEGER DEFAULT 0,
+      pin_failure_count INTEGER NOT NULL DEFAULT 0,
+      pin_failure_at INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL
     )
   `);

@@ -10,6 +10,8 @@ export interface Wallet {
   publicKeyJwk: string | null;
   autoLogoutMinutes: number;
   biometricEnabled: boolean;
+  pinFailureCount: number;
+  pinFailureAt: number;
   createdAt: number;
 }
 

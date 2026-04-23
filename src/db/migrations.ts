@@ -79,6 +79,17 @@ const migrations: Migration[] = [
       )`);
     },
   },
+  {
+    version: 4,
+    up: db => {
+      db.execute(
+        `ALTER TABLE wallet ADD COLUMN pin_failure_count INTEGER NOT NULL DEFAULT 0`,
+      );
+      db.execute(
+        `ALTER TABLE wallet ADD COLUMN pin_failure_at INTEGER NOT NULL DEFAULT 0`,
+      );
+    },
+  },
 ];
 
 export function runMigrations(db: Database, currentVersion: number): number {

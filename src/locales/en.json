@@ -52,7 +52,9 @@
     "biometricChangedBody": "A change in this device's biometric enrollment was detected. Please sign in with your PIN — we'll help you re-bind your new biometric right after.",
     "biometricLocked": "Biometrics are temporarily locked. Please try again later or use your PIN.",
     "biometricLockedPermanent": "Biometrics are permanently locked. Please re-authenticate in the system settings.",
-    "biometricUnavailable": "Biometrics are currently unavailable"
+    "biometricUnavailable": "Biometrics are currently unavailable",
+    "pinLockedTitle": "PIN Temporarily Locked",
+    "pinLockedBody": "Too many failed attempts. Try again in {{seconds}}s."
   },
   "home": {
     "title": "My Credentials",

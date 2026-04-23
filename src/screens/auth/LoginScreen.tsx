@@ -16,6 +16,7 @@ import {useWalletStore} from '../../store/walletStore';
 import PinCodeInput from '../../components/PinCodeInput';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import {verifyPinAsync} from '../../utils/pin';
+import {computePinGate} from '../../utils/pinGate';
 import {isBiometricAvailable} from '../../native/BiometricAuth';
 import {
   verifyBiometric,
@@ -24,6 +25,7 @@ import {
 } from '../../native/BiometricUnlock';
 import {BiometryErrorCode} from '../../native/BiometricErrors';
 import * as walletDao from '../../db/walletDao';
+import {addOperationRecord} from '../../db/recordDao';
 import {colors, type as fonts} from '../../theme/tokens';
 import {IconFingerprint} from '../../components/icons';
 
@@ -46,6 +48,7 @@ export default function LoginScreen({navigation}: Props) {
     if (!selectedWallet) return;
     const result = await verifyBiometric(selectedWallet.id, t('auth.biometricPrompt'));
     if (result.success) {
+      addOperationRecord(selectedWallet.id, 'login', 'success:biometric');
       login(selectedWallet.id);
       return;
     }
@@ -101,10 +104,24 @@ export default function LoginScreen({navigation}: Props) {
 
   const handlePinComplete = async (value: string) => {
     if (!selectedWallet) return;
+    const gate = computePinGate(
+      selectedWallet.pinFailureCount,
+      selectedWallet.pinFailureAt,
+    );
+    if (!gate.allowed) {
+      Alert.alert(
+        t('auth.pinLockedTitle'),
+        t('auth.pinLockedBody', {seconds: gate.remainingSeconds}),
+      );
+      return;
+    }
     setVerifying(true);
     try {
       const ok = await verifyPinAsync(value, selectedWallet.pinSalt, selectedWallet.pinHash);
       if (ok) {
+        walletDao.resetPinFailures(selectedWallet.id);
+        updateWallet(selectedWallet.id, {pinFailureCount: 0, pinFailureAt: 0});
+        addOperationRecord(selectedWallet.id, 'login', 'success:pin');
         if (reEnableAfterPinRef.current) {
           reEnableAfterPinRef.current = false;
           const enabled = await enableBiometricUnlock(selectedWallet.id);
@@ -115,7 +132,21 @@ export default function LoginScreen({navigation}: Props) {
         }
         login(selectedWallet.id);
       } else {
-        Alert.alert(t('auth.loginFailed'), t('auth.wrongPinCode'));
+        const next = walletDao.recordPinFailure(selectedWallet.id);
+        updateWallet(selectedWallet.id, {
+          pinFailureCount: next.count,
+          pinFailureAt: next.at,
+        });
+        addOperationRecord(selectedWallet.id, 'login', `failed:pin:${next.count}`);
+        const after = computePinGate(next.count, next.at);
+        if (!after.allowed) {
+          Alert.alert(
+            t('auth.pinLockedTitle'),
+            t('auth.pinLockedBody', {seconds: after.remainingSeconds}),
+          );
+        } else {
+          Alert.alert(t('auth.loginFailed'), t('auth.wrongPinCode'));
+        }
       }
     } finally {
       setVerifying(false);

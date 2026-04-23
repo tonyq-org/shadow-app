@@ -25,6 +25,8 @@ export function createWallet(
     publicKeyJwk: null,
     autoLogoutMinutes: 5,
     biometricEnabled: false,
+    pinFailureCount: 0,
+    pinFailureAt: 0,
     createdAt: now,
   };
 }
@@ -83,6 +85,27 @@ export function updateBiometricEnabled(id: string, enabled: boolean): void {
   ]);
 }
 
+export function recordPinFailure(id: string): {count: number; at: number} {
+  const db = getDatabase();
+  const now = Date.now();
+  db.execute(
+    'UPDATE wallet SET pin_failure_count = pin_failure_count + 1, pin_failure_at = ? WHERE id = ?',
+    [now, id],
+  );
+  const row = db
+    .execute('SELECT pin_failure_count FROM wallet WHERE id = ?', [id])
+    .rows[0];
+  return {count: (row?.pin_failure_count as number) ?? 0, at: now};
+}
+
+export function resetPinFailures(id: string): void {
+  const db = getDatabase();
+  db.execute(
+    'UPDATE wallet SET pin_failure_count = 0, pin_failure_at = 0 WHERE id = ?',
+    [id],
+  );
+}
+
 export function deleteWallet(id: string): void {
   const db = getDatabase();
   db.execute('DELETE FROM credential WHERE wallet_id = ?', [id]);
@@ -102,6 +125,8 @@ function mapRowToWallet(row: Record<string, unknown>): Wallet {
     publicKeyJwk: row.public_key_jwk as string | null,
     autoLogoutMinutes: (row.auto_logout_minutes as number) ?? 5,
     biometricEnabled: (row.biometric_enabled as number) === 1,
+    pinFailureCount: (row.pin_failure_count as number) ?? 0,
+    pinFailureAt: (row.pin_failure_at as number) ?? 0,
     createdAt: row.created_at as number,
   };
 }
