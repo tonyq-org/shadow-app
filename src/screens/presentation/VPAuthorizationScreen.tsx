@@ -29,6 +29,10 @@ import {sdJwtDecode} from '../../services/protocol/sdjwt';
 import {addOperationRecord, addPresentationRecord} from '../../db/recordDao';
 import {isBiometricAvailable, authenticateWithBiometric} from '../../native/BiometricAuth';
 import {BiometryErrorCode} from '../../native/BiometricErrors';
+import {
+  lookupIssuerTrust,
+  pickLocalizedIssuerName,
+} from '../../services/trust/issuerTrustList';
 import {colors, type as fonts} from '../../theme/tokens';
 import CardItem from '../../components/CardItem';
 import {IconClose, IconShield, IconCheck} from '../../components/icons';
@@ -42,7 +46,7 @@ interface FieldRow {
 }
 
 export default function VPAuthorizationScreen({navigation, route}: Props) {
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
   const {qrData, selectedCredentialId, offline} = route.params;
   const {currentWallet, currentCredentials} = useWallet();
 
@@ -245,7 +249,18 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
     );
   }
 
-  const verifierName = request.clientId ?? request.verifierDid ?? 'VERIFIER';
+  // Look up the verifier DID against the local MODA trust cache. If the DID is
+  // absent (or the entry is not marked trusted), surface an explicit
+  // "UNVERIFIED" warning — the previous hardcoded TRUSTED chip was a security
+  // lie. When the DID is on the list, prefer its localized org name.
+  const verifierDidForTrust = request.verifierDid ?? request.clientId ?? null;
+  const verifierTrust = lookupIssuerTrust(verifierDidForTrust);
+  const isVerifierTrusted = verifierTrust !== null && verifierTrust.status === 1;
+  const trustedName = verifierTrust
+    ? pickLocalizedIssuerName(verifierTrust.org, i18n.language) ?? null
+    : null;
+  const verifierName =
+    trustedName ?? request.clientId ?? request.verifierDid ?? 'VERIFIER';
   const verifierInitial = verifierName.slice(0, 1).toUpperCase();
 
   return (
@@ -268,13 +283,33 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
                 {request.verifierDid ?? request.clientId ?? '—'}
               </Text>
             </View>
-            <View style={styles.trustedChip}>
-              <Text style={styles.trustedText}>TRUSTED</Text>
+            <View
+              style={[
+                styles.trustedChip,
+                !isVerifierTrusted && styles.untrustedChip,
+              ]}>
+              <Text
+                style={[
+                  styles.trustedText,
+                  !isVerifierTrusted && styles.untrustedText,
+                ]}>
+                {isVerifierTrusted
+                  ? t('presentation.trust.trustedChip')
+                  : t('presentation.trust.unverifiedChip')}
+              </Text>
             </View>
           </View>
-          <Text style={styles.verifierBody}>
-            驗證方將以 OID4VP 協議接收您授權的欄位。未勾選的資料以 SD-JWT 鹽值遮蔽，驗證方無法反推。
-          </Text>
+          {isVerifierTrusted ? (
+            <Text style={styles.verifierBody}>
+              {t('presentation.trust.trustedBody')}
+            </Text>
+          ) : (
+            <View style={styles.warningCallout}>
+              <Text style={styles.warningText}>
+                {t('presentation.trust.untrustedBody')}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.sectionHeaderRow}>
@@ -448,11 +483,30 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.brand.brass55,
   },
+  untrustedChip: {
+    backgroundColor: colors.status.danger25,
+    borderColor: colors.status.danger,
+  },
   trustedText: {
     fontFamily: fonts.mono,
     fontSize: 9,
     letterSpacing: 1.2,
     color: colors.brand.brass,
+  },
+  untrustedText: {color: colors.status.danger},
+  warningCallout: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: colors.status.danger25,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.status.danger,
+  },
+  warningText: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.status.danger,
+    lineHeight: 18,
   },
   verifierBody: {
     fontFamily: fonts.sans,

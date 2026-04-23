@@ -12,6 +12,7 @@ export interface Wallet {
   biometricEnabled: boolean;
   pinFailureCount: number;
   pinFailureAt: number;
+  pinIterations: number;
   createdAt: number;
 }
 

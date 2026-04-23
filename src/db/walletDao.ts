@@ -1,19 +1,21 @@
 import {v4 as uuidv4} from 'uuid';
 import {getDatabase} from './database';
 import type {Wallet} from '../store/walletStore';
+import {PBKDF2_ITERATIONS_DEFAULT} from '../utils/pin';
 
 export function createWallet(
   name: string,
   pinHash: string,
   pinSalt: string,
+  pinIterations: number = PBKDF2_ITERATIONS_DEFAULT,
 ): Wallet {
   const db = getDatabase();
   const id = uuidv4();
   const now = Date.now();
 
   db.execute(
-    'INSERT INTO wallet (id, name, pin_hash, pin_salt, created_at) VALUES (?, ?, ?, ?, ?)',
-    [id, name, pinHash, pinSalt, now],
+    'INSERT INTO wallet (id, name, pin_hash, pin_salt, pin_iterations, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [id, name, pinHash, pinSalt, pinIterations, now],
   );
 
   return {
@@ -27,6 +29,7 @@ export function createWallet(
     biometricEnabled: false,
     pinFailureCount: 0,
     pinFailureAt: 0,
+    pinIterations,
     createdAt: now,
   };
 }
@@ -68,13 +71,17 @@ export function updateAutoLogout(id: string, minutes: number): void {
   ]);
 }
 
-export function updatePin(id: string, pinHash: string, pinSalt: string): void {
+export function updatePin(
+  id: string,
+  pinHash: string,
+  pinSalt: string,
+  pinIterations: number = PBKDF2_ITERATIONS_DEFAULT,
+): void {
   const db = getDatabase();
-  db.execute('UPDATE wallet SET pin_hash = ?, pin_salt = ? WHERE id = ?', [
-    pinHash,
-    pinSalt,
-    id,
-  ]);
+  db.execute(
+    'UPDATE wallet SET pin_hash = ?, pin_salt = ?, pin_iterations = ? WHERE id = ?',
+    [pinHash, pinSalt, pinIterations, id],
+  );
 }
 
 export function updateBiometricEnabled(id: string, enabled: boolean): void {
@@ -127,6 +134,8 @@ function mapRowToWallet(row: Record<string, unknown>): Wallet {
     biometricEnabled: (row.biometric_enabled as number) === 1,
     pinFailureCount: (row.pin_failure_count as number) ?? 0,
     pinFailureAt: (row.pin_failure_at as number) ?? 0,
+    pinIterations:
+      (row.pin_iterations as number) ?? 100000,
     createdAt: row.created_at as number,
   };
 }

@@ -15,7 +15,12 @@ import {useAuthStore} from '../../store/authStore';
 import {useWalletStore} from '../../store/walletStore';
 import PinCodeInput from '../../components/PinCodeInput';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import {verifyPinAsync} from '../../utils/pin';
+import {
+  verifyPinAsync,
+  hashPinAsync,
+  generateSalt,
+  PBKDF2_ITERATIONS_DEFAULT,
+} from '../../utils/pin';
 import {computePinGate} from '../../utils/pinGate';
 import {isBiometricAvailable} from '../../native/BiometricAuth';
 import {
@@ -117,11 +122,39 @@ export default function LoginScreen({navigation}: Props) {
     }
     setVerifying(true);
     try {
-      const ok = await verifyPinAsync(value, selectedWallet.pinSalt, selectedWallet.pinHash);
+      const ok = await verifyPinAsync(
+        value,
+        selectedWallet.pinSalt,
+        selectedWallet.pinHash,
+        selectedWallet.pinIterations,
+      );
       if (ok) {
         walletDao.resetPinFailures(selectedWallet.id);
         updateWallet(selectedWallet.id, {pinFailureCount: 0, pinFailureAt: 0});
         addOperationRecord(selectedWallet.id, 'login', 'success:pin');
+        if (selectedWallet.pinIterations < PBKDF2_ITERATIONS_DEFAULT) {
+          try {
+            const newSalt = generateSalt();
+            const newHash = await hashPinAsync(
+              value,
+              newSalt,
+              PBKDF2_ITERATIONS_DEFAULT,
+            );
+            walletDao.updatePin(
+              selectedWallet.id,
+              newHash,
+              newSalt,
+              PBKDF2_ITERATIONS_DEFAULT,
+            );
+            updateWallet(selectedWallet.id, {
+              pinHash: newHash,
+              pinSalt: newSalt,
+              pinIterations: PBKDF2_ITERATIONS_DEFAULT,
+            });
+          } catch {
+            // Upgrade is best-effort; legacy iteration count still works.
+          }
+        }
         if (reEnableAfterPinRef.current) {
           reEnableAfterPinRef.current = false;
           const enabled = await enableBiometricUnlock(selectedWallet.id);

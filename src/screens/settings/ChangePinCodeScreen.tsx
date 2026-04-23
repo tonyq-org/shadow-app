@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,19 @@ import {useWallet} from '../../hooks/useWallet';
 import {useWalletStore} from '../../store/walletStore';
 import PinCodeInput from '../../components/PinCodeInput';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import {generateSalt, hashPinAsync, verifyPinAsync} from '../../utils/pin';
+import {
+  generateSalt,
+  hashPinAsync,
+  verifyPinAsync,
+  PBKDF2_ITERATIONS_DEFAULT,
+} from '../../utils/pin';
 import {computePinGate} from '../../utils/pinGate';
 import * as walletDao from '../../db/walletDao';
 import {addOperationRecord} from '../../db/recordDao';
+import {
+  disableBiometricUnlock,
+  enableBiometricUnlock,
+} from '../../native/BiometricUnlock';
 import {colors, type as fonts} from '../../theme/tokens';
 import {IconChevron} from '../../components/icons';
 
@@ -33,8 +42,13 @@ export default function ChangePinCodeScreen({navigation}: Props) {
   const [newPin, setNewPin] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!currentWallet) {
+      navigation.goBack();
+    }
+  }, [currentWallet, navigation]);
+
   if (!currentWallet) {
-    navigation.goBack();
     return null;
   }
 
@@ -57,6 +71,7 @@ export default function ChangePinCodeScreen({navigation}: Props) {
           value,
           currentWallet.pinSalt,
           currentWallet.pinHash,
+          currentWallet.pinIterations,
         );
         if (!ok) {
           const next = walletDao.recordPinFailure(currentWallet.id);
@@ -105,9 +120,30 @@ export default function ChangePinCodeScreen({navigation}: Props) {
     setLoading(true);
     try {
       const salt = generateSalt();
-      const pinHash = await hashPinAsync(value, salt);
-      walletDao.updatePin(currentWallet.id, pinHash, salt);
-      updateWallet(currentWallet.id, {pinHash, pinSalt: salt});
+      const pinHash = await hashPinAsync(
+        value,
+        salt,
+        PBKDF2_ITERATIONS_DEFAULT,
+      );
+      walletDao.updatePin(
+        currentWallet.id,
+        pinHash,
+        salt,
+        PBKDF2_ITERATIONS_DEFAULT,
+      );
+      updateWallet(currentWallet.id, {
+        pinHash,
+        pinSalt: salt,
+        pinIterations: PBKDF2_ITERATIONS_DEFAULT,
+      });
+      if (currentWallet.biometricEnabled) {
+        await disableBiometricUnlock(currentWallet.id);
+        const reEnabled = await enableBiometricUnlock(currentWallet.id);
+        if (!reEnabled) {
+          walletDao.updateBiometricEnabled(currentWallet.id, false);
+          updateWallet(currentWallet.id, {biometricEnabled: false});
+        }
+      }
       addOperationRecord(currentWallet.id, 'changePassword', 'success');
       Alert.alert(t('common.success'), t('settings.changePinSuccess'), [
         {text: t('common.ok'), onPress: () => navigation.goBack()},

@@ -12,6 +12,21 @@ export default function VPResultScreen({navigation, route}: Props) {
   const {t} = useTranslation();
   const {success, message} = route.params;
 
+  const handleDone = () => {
+    // Always reset the PresentationStack to PresentationHome first. The VP
+    // flow is often entered cross-tab (ScanQR → VPAuthorization → replace
+    // VPResult), leaving the stack with just [VPResult]; popToTop throws
+    // "POP_TO_TOP was not handled" and re-entering the tab would land back
+    // on the result. Resetting makes the tab return to scenarios/scan entry.
+    navigation.reset({index: 0, routes: [{name: 'PresentationHome'}]});
+    // On success, route the user to the card list (the natural "done"
+    // destination). On failure, stay inside PresentationTab so they can
+    // retry from PresentationHome without hunting through tabs.
+    if (success) {
+      navigation.getParent()?.navigate('HomeTab', {screen: 'CardOverview'});
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -23,9 +38,7 @@ export default function VPResultScreen({navigation, route}: Props) {
         </Text>
         {message && <Text style={styles.message}>{message}</Text>}
       </View>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.popToTop()}>
+      <TouchableOpacity style={styles.button} onPress={handleDone}>
         <Text style={styles.buttonText}>{t('common.done')}</Text>
       </TouchableOpacity>
     </SafeAreaView>

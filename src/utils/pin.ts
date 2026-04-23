@@ -3,7 +3,14 @@ import {pbkdf2} from '@noble/hashes/pbkdf2.js';
 import {sha256} from '@noble/hashes/sha2.js';
 import {randomBytes, bytesToHex} from '@noble/hashes/utils.js';
 
-const PBKDF2_ITERATIONS = 100_000;
+// Bumped from 100k to 600k per OWASP 2023 guidance. Existing wallets keep
+// their original iteration count (stored per-row in wallet.pin_iterations);
+// this value is only used for brand new PINs and PIN changes.
+export const PBKDF2_ITERATIONS_DEFAULT = 600_000;
+
+// Legacy default still referenced by older wallet rows created before v5.
+export const PBKDF2_ITERATIONS_LEGACY = 100_000;
+
 const SALT_BYTES = 16;
 const KEY_LEN = 32;
 
@@ -22,11 +29,15 @@ export function generateSalt(): string {
   return bytesToHex(randomBytes(SALT_BYTES));
 }
 
-export function hashPin(pin: string, saltHex: string): string {
+export function hashPin(
+  pin: string,
+  saltHex: string,
+  iterations: number = PBKDF2_ITERATIONS_DEFAULT,
+): string {
   const salt = hexToBytes(saltHex);
   const pinBytes = utf8ToBytes(pin);
   const derived = pbkdf2(sha256, pinBytes, salt, {
-    c: PBKDF2_ITERATIONS,
+    c: iterations,
     dkLen: KEY_LEN,
   });
   return bytesToHex(derived);
@@ -47,26 +58,34 @@ function utf8ToBytes(s: string): Uint8Array {
   return new Uint8Array(bytes);
 }
 
-export function verifyPin(pin: string, saltHex: string, expectedHashHex: string): boolean {
-  const actual = hashPin(pin, saltHex);
+export function verifyPin(
+  pin: string,
+  saltHex: string,
+  expectedHashHex: string,
+  iterations: number = PBKDF2_ITERATIONS_DEFAULT,
+): boolean {
+  const actual = hashPin(pin, saltHex, iterations);
   return timingSafeEqual(actual, expectedHashHex);
 }
 
-export async function hashPinAsync(pin: string, saltHex: string): Promise<string> {
+export async function hashPinAsync(
+  pin: string,
+  saltHex: string,
+  iterations: number = PBKDF2_ITERATIONS_DEFAULT,
+): Promise<string> {
   if (nativeKm?.pbkdf2) {
-    return nativeKm.pbkdf2(pin, saltHex, PBKDF2_ITERATIONS, KEY_LEN);
+    return nativeKm.pbkdf2(pin, saltHex, iterations, KEY_LEN);
   }
-  return new Promise(resolve => {
-    setTimeout(() => resolve(hashPin(pin, saltHex)), 50);
-  });
+  return hashPin(pin, saltHex, iterations);
 }
 
 export async function verifyPinAsync(
   pin: string,
   saltHex: string,
   expectedHashHex: string,
+  iterations: number = PBKDF2_ITERATIONS_DEFAULT,
 ): Promise<boolean> {
-  const actual = await hashPinAsync(pin, saltHex);
+  const actual = await hashPinAsync(pin, saltHex, iterations);
   return timingSafeEqual(actual, expectedHashHex);
 }
 

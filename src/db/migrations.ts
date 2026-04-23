@@ -5,6 +5,23 @@ interface Migration {
   up: (db: Database) => void;
 }
 
+// SQLite throws when ADD COLUMN targets an existing column. Some legacy
+// installs ended up with the tables already carrying these columns (previous
+// `initTables` created them eagerly) while `user_version` stayed behind; in
+// that case re-running the migration would abort boot. Swallow the specific
+// "duplicate column" error so migrations stay idempotent.
+function addColumnIfMissing(db: Database, sql: string): void {
+  try {
+    db.execute(sql);
+  } catch (err: any) {
+    const msg = String(err?.message ?? err ?? '').toLowerCase();
+    if (msg.includes('duplicate column')) {
+      return;
+    }
+    throw err;
+  }
+}
+
 const migrations: Migration[] = [
   {
     version: 1,
@@ -58,7 +75,8 @@ const migrations: Migration[] = [
   {
     version: 2,
     up: db => {
-      db.execute(
+      addColumnIfMissing(
+        db,
         `ALTER TABLE credential ADD COLUMN format TEXT NOT NULL DEFAULT 'sd-jwt-vcdm'`,
       );
     },
@@ -82,11 +100,24 @@ const migrations: Migration[] = [
   {
     version: 4,
     up: db => {
-      db.execute(
+      addColumnIfMissing(
+        db,
         `ALTER TABLE wallet ADD COLUMN pin_failure_count INTEGER NOT NULL DEFAULT 0`,
       );
-      db.execute(
+      addColumnIfMissing(
+        db,
         `ALTER TABLE wallet ADD COLUMN pin_failure_at INTEGER NOT NULL DEFAULT 0`,
+      );
+    },
+  },
+  {
+    version: 5,
+    up: db => {
+      // Store PBKDF2 iteration count per-wallet so existing PIN hashes keep
+      // working after we raise the default for new PINs.
+      addColumnIfMissing(
+        db,
+        `ALTER TABLE wallet ADD COLUMN pin_iterations INTEGER NOT NULL DEFAULT 100000`,
       );
     },
   },
@@ -102,3 +133,6 @@ export function runMigrations(db: Database, currentVersion: number): number {
   }
   return version;
 }
+
+export const LATEST_MIGRATION_VERSION =
+  migrations[migrations.length - 1].version;

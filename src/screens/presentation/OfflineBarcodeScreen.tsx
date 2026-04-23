@@ -65,7 +65,7 @@ export default function OfflineBarcodeScreen({navigation, route}: Props) {
   const expired = !loading && secondsLeft === 0 && qrcode !== null;
 
   const dismiss = () => {
-    navigation.popToTop();
+    navigation.getParent()?.navigate('HomeTab', {screen: 'CardOverview'});
   };
 
   return (

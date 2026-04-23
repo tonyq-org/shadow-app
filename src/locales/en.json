@@ -114,6 +114,12 @@
     "changeCard": "Change Credential",
     "authorizePrompt": "Authenticate to authorize this presentation",
     "biometricRequired": "Biometric authentication required to authorize",
+    "trust": {
+      "trustedChip": "TRUSTED",
+      "unverifiedChip": "UNVERIFIED",
+      "trustedBody": "The verifier will receive the fields you authorize via OID4VP. Unchecked claims remain masked by SD-JWT salts and cannot be recovered.",
+      "untrustedBody": "This verifier is not on the MODA trust list. Please confirm before authorizing."
+    },
     "result": {
       "success": "Authorization Successful",
       "failed": "Authorization Failed"

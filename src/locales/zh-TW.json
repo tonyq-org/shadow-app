@@ -114,6 +114,12 @@
     "changeCard": "更換憑證",
     "authorizePrompt": "驗證身分以授權出示",
     "biometricRequired": "需要通過生物辨識才能授權",
+    "trust": {
+      "trustedChip": "TRUSTED",
+      "unverifiedChip": "UNVERIFIED",
+      "trustedBody": "驗證方將以 OID4VP 協議接收您授權的欄位。未勾選的資料以 SD-JWT 鹽值遮蔽，驗證方無法反推。",
+      "untrustedBody": "此驗證方不在數位發展部信任清單中，請確認是否授權。"
+    },
     "result": {
       "success": "授權成功",
       "failed": "授權失敗"
