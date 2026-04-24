@@ -1,7 +1,6 @@
 import {useEffect} from 'react';
 import {Linking} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {env} from '../config/env';
 
 export type DeepLinkResult =
   | {type: 'vc'; qrCode: string}

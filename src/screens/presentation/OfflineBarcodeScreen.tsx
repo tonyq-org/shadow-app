@@ -60,7 +60,7 @@ export default function OfflineBarcodeScreen({navigation, route}: Props) {
       setSecondsLeft(s => (s > 0 ? s - 1 : 0));
     }, 1000);
     return () => clearInterval(id);
-  }, [secondsLeft > 0]);
+  }, [secondsLeft]);
 
   const expired = !loading && secondsLeft === 0 && qrcode !== null;
 

@@ -140,7 +140,11 @@ export default function IssuerWebViewScreen({navigation, route}: Props) {
         <WebView
           ref={webViewRef}
           source={{uri: url}}
-          originWhitelist={['http://*', 'https://*']}
+          originWhitelist={['https://*']}
+          mixedContentMode="never"
+          allowFileAccess={false}
+          allowFileAccessFromFileURLs={false}
+          allowUniversalAccessFromFileURLs={false}
           onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
           onOpenWindow={onOpenWindow}
           setSupportMultipleWindows={false}
@@ -160,8 +164,6 @@ export default function IssuerWebViewScreen({navigation, route}: Props) {
           }}
           javaScriptEnabled
           domStorageEnabled
-          thirdPartyCookiesEnabled
-          sharedCookiesEnabled
           allowsBackForwardNavigationGestures
         />
         {loading ? (

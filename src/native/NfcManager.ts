@@ -13,7 +13,7 @@ export async function isNfcAvailable(): Promise<boolean> {
   return false;
 }
 
-export async function sendViaNfc(data: Uint8Array): Promise<NfcResult> {
+export async function sendViaNfc(_data: Uint8Array): Promise<NfcResult> {
   // TODO: implement ISO-DEP NFC transmission
   // Chunk data into 255-byte packets
   // Use SELECT_APDU: 00 A4 04 00 06 F2 23 34 45 56 68

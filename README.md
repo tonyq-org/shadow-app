@@ -27,7 +27,7 @@ This project rewrites the original TWDIW native apps (Kotlin + Swift + Flutter/D
 ```
 src/
 ├── navigation/          # React Navigation (AuthStack + 5-tab MainTabs)
-├── screens/             # 17 screens across auth, home, credential, presentation, settings
+├── screens/             # Screens across auth, home, credential, presentation, settings
 ├── components/          # Reusable UI (CardItem, PinCodeInput, BottomSheet, etc.)
 ├── services/
 │   ├── protocol/        # OID4VCI, OID4VP, SD-JWT, DID — ported from Dart
@@ -45,7 +45,7 @@ src/
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22.11+
 - React Native CLI
 - Android Studio (for Android) or Xcode (for iOS)
 
@@ -88,12 +88,12 @@ SUPPORT_EMAIL=support@example.com
 - [x] Auth screens (wallet creation, PIN, login)
 - [x] Main app screens (home, credential, presentation, settings)
 - [x] i18n (zh-TW + en)
-- [ ] Native KeyManager module (Android KeyStore + iOS Secure Enclave)
-- [ ] SQLite + SQLCipher integration
-- [ ] QR code scanning (react-native-vision-camera)
-- [ ] Biometric authentication
+- [x] Native KeyManager module (Android KeyStore + iOS Secure Enclave)
+- [x] SQLite + SQLCipher integration
+- [x] QR code scanning (react-native-vision-camera)
+- [x] Biometric authentication
 - [ ] NFC VP transmission
-- [ ] Trust list API integration
+- [x] Trust list API integration
 - [ ] E2E testing
 
 ## Acknowledgements

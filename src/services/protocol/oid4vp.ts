@@ -1,7 +1,8 @@
 import {v4 as uuidv4} from 'uuid';
 import {httpClient} from '../api/http';
-import {jwtDecode} from '../crypto/jwt';
+import {jwtDecode, type JWK} from '../crypto/jwt';
 import {createSignedJWT} from '../crypto/jws';
+import {verifyJwt} from '../crypto/verifyJwt';
 import type {DIDDocument} from './did';
 import {deriveDid, getPublicKeyJwk} from './did';
 import {detectDidFormatFromQr, type DidFormat} from './didFormat';
@@ -144,7 +145,6 @@ async function doParseVPRequest(
   qrCode: string,
 ): Promise<PresentationRequest> {
   const didFormat = detectDidFormatFromQr(qrCode);
-  console.log('[VP.parse] didFormat=', didFormat);
   const q = unwrapQr(qrCode);
   const requestUri = extractQueryParam(q, 'request_uri');
 
@@ -152,29 +152,37 @@ async function doParseVPRequest(
     throw new VPRequestError('malformedQr', 'Missing request_uri in QR code');
   }
 
-  console.log('[VP.parse] requestUri=', requestUri);
+  // Refuse cleartext: otherwise an attacker on the same network can MITM the
+  // request_uri response and inject an arbitrary signed VP request.
+  if (!/^https:\/\//i.test(requestUri)) {
+    throw new VPRequestError(
+      'malformedQr',
+      'request_uri must use HTTPS',
+    );
+  }
+
   let response;
   try {
     response = await httpClient.get(requestUri);
   } catch (e: any) {
     throw classifyHttpError(e, 'GET request_uri', {treat4xxAsExpired: true});
   }
-  const requestToken = response.data;
+  const requestToken =
+    typeof response.data === 'string' ? response.data : response.data.toString();
 
-  const {payload} = jwtDecode(
-    typeof requestToken === 'string' ? requestToken : requestToken.toString(),
+  const {header, payload} = jwtDecode(requestToken);
+
+  // Verify the JWS signature with the verifier's embedded public key AND make
+  // sure that key matches the DID the verifier claims to be in client_id.
+  // Without this an attacker forges any request_uri body they want.
+  verifyRequestJwtOrThrow(
+    requestToken,
+    header.jwk,
+    (payload.client_id as string | undefined) ?? null,
   );
 
   const pd = payload.presentation_definition as Record<string, unknown> | undefined;
   const dcql = (payload as any).dcql_query;
-  console.log(
-    '[VP.parse] hasPresentationDefinition=',
-    !!pd,
-    'hasDcqlQuery=',
-    !!dcql,
-    'client_id=',
-    payload.client_id,
-  );
 
   if (!pd && dcql) {
     throw new VPRequestError(
@@ -194,6 +202,37 @@ async function doParseVPRequest(
     verifierDid: payload.client_id as string | undefined,
     didFormat,
   };
+}
+
+function verifyRequestJwtOrThrow(
+  token: string,
+  headerJwk: JWK | undefined,
+  clientId: string | null,
+): void {
+  if (!headerJwk) {
+    throw new VPRequestError(
+      'malformedQr',
+      'Request JWT header missing jwk — cannot verify signature',
+    );
+  }
+  if (!verifyJwt(token, headerJwk)) {
+    throw new VPRequestError(
+      'malformedQr',
+      'Request JWT signature invalid',
+    );
+  }
+  // When client_id is a did:key, it must match the JWK that actually signed
+  // the request. Otherwise the signer is claiming to be someone else.
+  if (clientId && clientId.startsWith('did:key:')) {
+    const twdiw = deriveDid(headerJwk, 'twdiw').did;
+    const w3c = deriveDid(headerJwk, 'w3c').did;
+    if (clientId !== twdiw && clientId !== w3c) {
+      throw new VPRequestError(
+        'malformedQr',
+        'Request JWT signer does not match client_id DID',
+      );
+    }
+  }
 }
 
 function parsePresentationDefinition(
@@ -236,7 +275,7 @@ export async function generateVP(
 
     // Apply SD-JWT selective disclosure to each VC
     const vpCredentials = vcs.map(vc => {
-      if (vc.disclosedFields && vc.disclosedFields.length > 0) {
+      if (vc.disclosedFields) {
         return sdJwtEncode(vc.jwt, vc.disclosedFields);
       }
       return vc.jwt;
@@ -289,9 +328,12 @@ export async function generateVP(
       params.set('custom_data', customData);
     }
 
-    console.log('[VP.post] uri=', request.responseUri);
-    console.log('[VP.post] state=', request.state, 'nonce=', request.nonce);
-    console.log('[VP.post] submission=', presentationSubmission);
+    if (!/^https:\/\//i.test(request.responseUri)) {
+      throw new VPRequestError(
+        'malformedQr',
+        'response_uri must use HTTPS',
+      );
+    }
     const response = await httpClient.post(
       request.responseUri,
       params.toString(),
@@ -320,7 +362,6 @@ function classifyHttpError(
   const backendMessage = extractBackendMessage(body);
   const bodyStr =
     typeof body === 'object' ? JSON.stringify(body) : String(body ?? '');
-  console.log(`[VP.${label}.err] status=`, status, 'body=', bodyStr);
 
   if (status === undefined) {
     return new VPRequestError('network', e?.message ?? `${label} network error`);

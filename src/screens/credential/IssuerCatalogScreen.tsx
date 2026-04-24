@@ -29,7 +29,7 @@ export default function IssuerCatalogScreen({navigation}: Props) {
     try {
       const list = await fetchVcCatalog();
       setItems(list);
-    } catch (err) {
+    } catch {
       Alert.alert(t('common.error'), t('credential.catalog.loadFailed'));
       setItems([]);
     } finally {

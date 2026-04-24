@@ -67,6 +67,10 @@ export function sdJwtEncode(
   const jwtPart = parts[0];
   const disclosureParts = parts.slice(1).filter(p => p.length > 0);
 
+  if (disclosureParts.length === 0) {
+    return token;
+  }
+
   const selectedDisclosures = disclosureParts.filter(encoded => {
     try {
       const decoded = JSON.parse(base64urlDecode(encoded));

@@ -2,7 +2,6 @@ import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useTranslation} from 'react-i18next';
 import type {AuthStackParamList} from '../../navigation/types';
 import {colors, type as fonts} from '../../theme/tokens';
 import Seal from '../../components/Seal';
@@ -16,8 +15,6 @@ interface Feature {
 }
 
 export default function WelcomeScreen({navigation}: Props) {
-  const {t} = useTranslation();
-
   const features: Feature[] = [
     {
       index: '01',

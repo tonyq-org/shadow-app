@@ -98,9 +98,9 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
 
   const selectedCredential = currentCredentials.find(c => c.id === autoSelectedId);
 
-  const {fieldRows, requiredKeys} = useMemo(() => {
+  const fieldRows = useMemo(() => {
     if (!selectedCredential || !request) {
-      return {fieldRows: [] as FieldRow[], requiredKeys: [] as string[]};
+      return [] as FieldRow[];
     }
     const reqKeys = new Set<string>();
     for (const desc of request.presentationDefinition.inputDescriptors) {
@@ -120,18 +120,25 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
         value: String(v ?? '—'),
         required: reqKeys.has(k),
       }));
-    return {fieldRows: rows, requiredKeys: Array.from(reqKeys)};
+    return rows;
   }, [selectedCredential, request]);
 
   useEffect(() => {
-    const next: Record<string, boolean> = {};
-    fieldRows.forEach(r => {
-      next[r.key] = r.required || checked[r.key] !== false;
+    setChecked(prev => {
+      const next: Record<string, boolean> = {};
+      fieldRows.forEach(r => {
+        next[r.key] = r.required || prev[r.key] !== false;
+      });
+      return next;
     });
-    setChecked(next);
-  }, [fieldRows.map(r => r.key).join('|')]);
+  }, [fieldRows]);
 
   const discloseCount = Object.values(checked).filter(Boolean).length;
+
+  const disclosedFields = useMemo(
+    () => fieldRows.filter(r => checked[r.key]).map(r => r.key),
+    [fieldRows, checked],
+  );
 
   const toggle = (key: string, required: boolean) => {
     if (required) return;
@@ -169,7 +176,10 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
       const didDocument = JSON.parse(currentWallet.didDocument) as DIDDocument;
       const keyTag = `wallet_${currentWallet.id}`;
       const result = await generateVP(keyTag, didDocument, request, [
-        {jwt: selectedCredential.rawJwt},
+        {
+          jwt: selectedCredential.rawJwt,
+          disclosedFields: fieldRows.length > 0 ? disclosedFields : undefined,
+        },
       ]);
       const success = result.code === '0';
       addPresentationRecord(
@@ -199,7 +209,8 @@ export default function VPAuthorizationScreen({navigation, route}: Props) {
           : err instanceof Error
             ? err.message
             : String(err);
-      const logDetail = err instanceof Error ? err.message : String(err);
+      const logDetail =
+        err instanceof VPRequestError ? `failed:${err.kind}` : 'failed';
       if (currentWallet) addOperationRecord(currentWallet.id, 'present', logDetail);
       navigation.replace('VPResult', {success: false, message: friendly});
     } finally {

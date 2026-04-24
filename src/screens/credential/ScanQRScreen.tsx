@@ -55,58 +55,8 @@ export default function ScanQRScreen({navigation, route}: Props) {
   );
 
   const initialQrConsumed = useRef(false);
-  useEffect(() => {
-    if (!initialQr || initialQrConsumed.current) return;
-    initialQrConsumed.current = true;
-    handleScan(initialQr);
-  }, [initialQr]);
 
-  const handleScan = async (data: string) => {
-    if (!currentWallet?.didDocument) {
-      Alert.alert(t('common.error'), t('auth.login'));
-      navigation.goBack();
-      return;
-    }
-    if (isVPAuthorizeQr(data)) {
-      const rejection = getKnownVPRejection(data);
-      if (rejection) {
-        Alert.alert(
-          t('common.error'),
-          t(`presentation.errors.${rejection}`),
-          [{text: t('common.ok'), onPress: () => setResetKey(k => k + 1)}],
-        );
-        return;
-      }
-      navigation.getParent()?.navigate('PresentationTab', {
-        screen: 'VPAuthorization',
-        params: {qrData: data},
-      });
-      return;
-    }
-    if (!isCredentialOfferQr(data)) {
-      Alert.alert(t('credential.addFailed'), t('scan.unsupportedQr'), [
-        {text: t('common.cancel'), onPress: () => navigation.goBack(), style: 'cancel'},
-        {text: t('common.retry'), onPress: () => setResetKey(k => k + 1)},
-      ]);
-      return;
-    }
-    setBusy(true);
-    try {
-      const offer = await getCredentialOffer(data);
-      if (offer.txCode) {
-        setPendingOffer({qrCode: data, offer});
-        setBusy(false);
-        return;
-      }
-      await runApply(offer, '');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setBusy(false);
-      navigation.replace('AddResult', {success: false, message});
-    }
-  };
-
-  const runApply = async (offer: CredentialOffer, code: string) => {
+  const runApply = useCallback(async (offer: CredentialOffer, code: string) => {
     if (!currentWallet?.didDocument) return;
     setBusy(true);
     try {
@@ -175,12 +125,63 @@ export default function ScanQRScreen({navigation, route}: Props) {
       navigation.replace('AddResult', {success: true, credentialId: saved.id});
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      addOperationRecord(currentWallet.id, 'add', message);
+      addOperationRecord(currentWallet.id, 'add', 'failed');
       navigation.replace('AddResult', {success: false, message});
     } finally {
       setBusy(false);
     }
-  };
+  }, [addCredential, currentWallet, navigation]);
+
+  const handleScan = useCallback(async (data: string) => {
+    if (!currentWallet?.didDocument) {
+      Alert.alert(t('common.error'), t('auth.login'));
+      navigation.goBack();
+      return;
+    }
+    if (isVPAuthorizeQr(data)) {
+      const rejection = getKnownVPRejection(data);
+      if (rejection) {
+        Alert.alert(
+          t('common.error'),
+          t(`presentation.errors.${rejection}`),
+          [{text: t('common.ok'), onPress: () => setResetKey(k => k + 1)}],
+        );
+        return;
+      }
+      navigation.getParent()?.navigate('PresentationTab', {
+        screen: 'VPAuthorization',
+        params: {qrData: data},
+      });
+      return;
+    }
+    if (!isCredentialOfferQr(data)) {
+      Alert.alert(t('credential.addFailed'), t('scan.unsupportedQr'), [
+        {text: t('common.cancel'), onPress: () => navigation.goBack(), style: 'cancel'},
+        {text: t('common.retry'), onPress: () => setResetKey(k => k + 1)},
+      ]);
+      return;
+    }
+    setBusy(true);
+    try {
+      const offer = await getCredentialOffer(data);
+      if (offer.txCode) {
+        setPendingOffer({qrCode: data, offer});
+        setBusy(false);
+        return;
+      }
+      await runApply(offer, '');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setBusy(false);
+      navigation.replace('AddResult', {success: false, message});
+    }
+  }, [currentWallet, navigation, runApply, t]);
+
+  useEffect(() => {
+    if (!initialQr || initialQrConsumed.current) return;
+    initialQrConsumed.current = true;
+    handleScan(initialQr);
+  }, [handleScan, initialQr]);
 
   const submitTxCode = () => {
     if (!pendingOffer) return;

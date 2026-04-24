@@ -8,7 +8,6 @@ import Svg, {
   Defs,
   Pattern,
   Ellipse,
-  G,
   LinearGradient,
   Stop,
 } from 'react-native-svg';

@@ -60,7 +60,6 @@ export default function QRScanner({
       const value = codes[0]?.value;
       if (value) {
         handledRef.current = true;
-        console.log('[QRScanner] scanned len=', value.length, 'value=', JSON.stringify(value));
         onScan(value);
       }
     },
@@ -95,9 +94,6 @@ export default function QRScanner({
         device={device}
         isActive={active}
         codeScanner={codeScanner}
-        onError={err => {
-          console.log('[QRScanner] camera error', err.code, err.message);
-        }}
       />
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <View style={styles.vignetteTop} />

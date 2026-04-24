@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, {Path, Circle, Rect, Line, G} from 'react-native-svg';
+import Svg, {Path, Circle, Rect, Line} from 'react-native-svg';
 
 type IconProps = {size?: number; color?: string};
 

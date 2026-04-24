@@ -37,7 +37,7 @@ export default function PresentationHomeScreen({navigation}: Props) {
     try {
       const list = await fetchVpScenarios();
       setScenarios(list);
-    } catch (err) {
+    } catch {
       Alert.alert(
         t('common.error'),
         t('presentation.errors.scenarioListFailed'),
@@ -67,7 +67,7 @@ export default function PresentationHomeScreen({navigation}: Props) {
           transactionId: tx.transactionId,
         },
       });
-    } catch (err) {
+    } catch {
       Alert.alert(
         t('common.error'),
         t('presentation.errors.startTransactionFailed'),
