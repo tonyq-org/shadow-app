@@ -32,7 +32,9 @@ local.properties
 *.hprof
 .cxx/
 *.keystore
+*.jks
 !debug.keystore
+keystore.properties
 .kotlin/
 
 # node.js
@@ -83,3 +85,4 @@ metro.log
 # Local scratch / test artifacts
 /tmp/
 /eudi-pid-offer-qr*.png
+android-upload-keystore-secrets*.zip

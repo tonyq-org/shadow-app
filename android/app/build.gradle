@@ -8,6 +8,8 @@ def hasReleaseKeystore = keystorePropertiesFile.exists()
 if (hasReleaseKeystore) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
+def appVersionCode = (findProperty("VERSION_CODE") ?: System.getenv("VERSION_CODE") ?: "1").toString().toInteger()
+def appVersionName = (findProperty("VERSION_NAME") ?: System.getenv("VERSION_NAME") ?: "1.0").toString()
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -86,11 +88,11 @@ android {
 
     namespace "com.shadowwallet"
     defaultConfig {
-        applicationId "com.shadowwallet"
+        applicationId "org.digiwallet.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
     }
     signingConfigs {
         debug {
