@@ -68,9 +68,6 @@ export default function WelcomeScreen({navigation}: Props) {
           onPress={() => navigation.navigate('Terms')}>
           <Text style={styles.primaryBtnText}>建立我的皮夾</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.6} style={styles.secondaryLink}>
-          <Text style={styles.secondaryLinkText}>匯入現有皮夾 →</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -136,7 +133,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.8,
     color: colors.text.mute,
   },
-  ctaWrap: {paddingBottom: 24, gap: 14, alignItems: 'center'},
+  ctaWrap: {paddingBottom: 24, alignItems: 'center'},
   primaryBtn: {
     alignSelf: 'stretch',
     height: 52,
@@ -151,12 +148,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: 0.5,
-  },
-  secondaryLink: {paddingVertical: 6},
-  secondaryLinkText: {
-    fontFamily: fonts.sans,
-    fontSize: 13,
-    color: colors.text.dim,
-    letterSpacing: 0.3,
   },
 });

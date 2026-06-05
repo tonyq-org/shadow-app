@@ -2,9 +2,21 @@ name: Android AAB
 
 on:
   workflow_dispatch:
+    inputs:
+      versionCode:
+        description: "Override versionCode (optional)"
+        required: false
+      versionName:
+        description: "Override versionName (optional)"
+        required: false
   push:
     branches:
       - main
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-android"
+      - "v[0-9]+.[0-9]+.[0-9]+-android"
 
 jobs:
   build-aab:
@@ -41,11 +53,26 @@ jobs:
           } > android/keystore.properties
 
       - name: Compute version
+        env:
+          INPUT_VERSION_CODE: ${{ inputs.versionCode }}
+          INPUT_VERSION_NAME: ${{ inputs.versionName }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          version_code=$((100 + GITHUB_RUN_NUMBER))
+          version_name="$INPUT_VERSION_NAME"
+          if [ -z "$version_name" ] && [ "$REF_TYPE" = "tag" ]; then
+            version_name="${REF_NAME#v}"
+            version_name="${version_name%-android}"
+          fi
+          if [ -z "$version_name" ]; then
+            version_name="1.0.${GITHUB_RUN_NUMBER}"
+          fi
+
+          version_code="${INPUT_VERSION_CODE:-$((100 + GITHUB_RUN_NUMBER))}"
           echo "VERSION_CODE=${version_code}" >> "$GITHUB_ENV"
-          echo "VERSION_NAME=1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=${version_name}" >> "$GITHUB_ENV"
           echo "versionCode=${version_code}" >> "$GITHUB_STEP_SUMMARY"
+          echo "versionName=${version_name}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build release bundle
         working-directory: android
@@ -57,3 +84,31 @@ jobs:
           name: shadow-wallet-release-aab-v${{ env.VERSION_CODE }}
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+      - name: Check Play credentials
+        id: play_creds
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -n "$PLAY_JSON" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "PLAY_SERVICE_ACCOUNT_JSON not set; skipping Play upload."
+          fi
+
+      - name: Upload to Google Play
+        if: steps.play_creds.outputs.enabled == 'true' && (github.event_name == 'workflow_dispatch' || github.ref_type == 'tag')
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: org.digiwallet.app
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          tracks: internal,beta
+          status: completed
+
+      - name: Cleanup signing files
+        if: always()
+        run: |
+          rm -f android/app/shadow-wallet-upload.keystore
+          rm -f android/keystore.properties
